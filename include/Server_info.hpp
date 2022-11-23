@@ -5,28 +5,29 @@
 # include <vector>
 # include <map>
 # include <set>
+
 # include <netinet/ip.h>
 
 # include "Location.hpp"
 
-namespace server{
+namespace server {
 	
 	class Server_info {
+		
 		private:
-			int							listen_fd_;
-			sockaddr_in					addr_;
-			int							port_;
-			std::string					host_;
-			std::set<std::string>		server_name_;
-			std::map<int, std::string>	error_page_;
-			std::string 				root_;
+			int									_listen_fd;
+			sockaddr_in							_addr;
+			int									_port;
+			std::string							_host;
+			std::vector<std::string>			_server_name;
+			std::map<int, std::string>			_error_page;
+			std::string							_root;
+			std::map<std::string, Location>		_location;
 
-			std::vector<Location>		location_;
-
-			
 		public:
 			Server_info();
 			~Server_info();
+
 	}; //Server_info;
 
 }; // server
