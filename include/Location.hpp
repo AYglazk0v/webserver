@@ -1,7 +1,7 @@
 #ifndef LOCATION_HPP
 #define LOCATION_HPP
 
-namespace server{
+namespace webserver{
 	class Location {
 		private:
 			std::string				path_;

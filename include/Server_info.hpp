@@ -10,7 +10,7 @@
 
 # include "Location.hpp"
 
-namespace server {
+namespace webserver {
 	
 	class Server_info {
 		

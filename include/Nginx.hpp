@@ -3,7 +3,7 @@
 
 # include "Server_info.hpp"
 
-namespace server {
+namespace webserver {
 	class Nginx {
 		private:
 			std::vector<Server_info>	server_info_;
