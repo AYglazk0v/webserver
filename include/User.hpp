@@ -89,12 +89,14 @@ namespace webserver
 		void			requestPrint() const;
 		void			responsePrint() const;
 
-		const std::string& getRequest() const;
+		const std::string&	getRequest() const;
+		bool				recvRequest(const char* buffer, const size_t& nbytes);
+		void				checkAndParseRequest();
 
-		const std::string& getResponse() const;
-		const std::string& getResponseHeader() const;
-		const std::string& getResponseSendPos() const;
-	};
+		const std::string&	getResponse() const;
+		const std::string&	getResponseHeader() const;
+		const std::string&	getResponseSendPos() const;
+	};//User
 	
 } // namespace webserver
 
