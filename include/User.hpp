@@ -44,9 +44,56 @@ namespace webserver
 		std::string							status_code_;
 		std::string							content_type_cgi;
 		
+	private:
+		User();
+
 	public:
-		User() {}
-		~User() {}
+		User(const User& rhs);
+		User& operator=(const User& rhs);
+		~User();
+	
+	private:
+		bool			recvHeader();
+		void			checkBodyLenght();
+		bool			recvBody();
+		void			parseRequestMethod(const std::string& method_sting);
+		void			parseRequestHeader(const std::string& header_string);
+		void			recvBodyParseChunked();
+		void			recvBodyParseLenght();
+		void			parseRequestFindLocation();
+
+		void			checkResponsePathUri();
+		void			createResponseReturnHeader();
+		void			parseResponseGetBody();
+		void			parseResponsePostBody();
+		void			parseResponseUpload();
+		void			parseResponsePutBody();
+		void			parseResponseDeleteBody();
+
+		void			createResponseBodyFromFile(const std::string& body_path_to_file);
+		void			createResponseErrorBody(const std::string& msg_error);
+		void			createResponceBodyDirectory(const std::string& dir_path);
+
+		void			parseResponseCGI();
+		void			CGIsetEnv();
+		void			CGIparseBody();
+	
+	public:
+		User(const int& user_ft, Server_info* server, const sockaddr_in& addr,
+				std::map<std::string, std::string>* http_code,
+				std::map<std::string, std::string>* mime_ext_list);
+		
+		void			UpdateActiveTime();
+		const time_t&	getActiveTime() const;
+		void			clearAll();
+		void			requestPrint() const;
+		void			responsePrint() const;
+
+		const std::string& getRequest() const;
+
+		const std::string& getResponse() const;
+		const std::string& getResponseHeader() const;
+		const std::string& getResponseSendPos() const;
 	};
 	
 } // namespace webserver
