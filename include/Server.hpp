@@ -5,6 +5,7 @@
 # include "Nginx.hpp"
 # include "User.hpp"
 # include <poll.h>
+# include <signal.h>
 # include <time.h>
 
 namespace webserver {
