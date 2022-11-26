@@ -64,7 +64,7 @@ namespace webserver {
 			const std::vector<std::string>& getServerName() const 					{ return server_name_; }
 			const std::map<int, std::string>& getErrorPage() const 					{ return error_page_; }
 			const std::string& getRoot() const 										{ return root_; } 
-			const std::map<std::string, Location>& getLocatuin() const 				{ return location_; }
+			const std::map<std::string, Location>& getLocation() const 				{ return location_; }
 
 			void addLocation(const Location& new_location) {
 				location_.insert(std::pair<std::string, Location>(new_location.getPath(), new_location));

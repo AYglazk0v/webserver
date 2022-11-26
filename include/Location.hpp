@@ -69,8 +69,8 @@ namespace webserver{
 			const std::string&	getUploadEnable() const								{ return upload_enable_; }
 			const std::string&	getUploadPath() const								{ return upload_path_; }
 			const std::string&	getCgiPath() const									{ return cgi_path_; }
-			const std::string&	setCgiExt() const									{ return cgi_ext_; }
-			const std::string&	setReturn() const									{ return return_; }
+			const std::string&	getCgiExt() const									{ return cgi_ext_; }
+			const std::string&	getReturn() const									{ return return_; }
 			const int&	getClientMaxBodySize() const								{ return client_max_body_size; }
 
 	}; //Location

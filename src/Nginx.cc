@@ -64,6 +64,39 @@ namespace webserver {
 		}
 	}
 
+	void Nginx::addLocationInServer(Server_info &server, Location& new_location) {
+		if (server.getLocation().find(new_location.getPath()) != server.getLocation().end()) {
+			throw std::runtime_error(ERROR_CONFIG_LOCATION_AGAIN);
+		}
+		if (new_location.getCgiPath().empty() != new_location.getCgiExt().empty()) {
+			throw std::runtime_error(ERROR_CONFIG_LOC_CGI_PATH_EXT);
+		}
+		if (new_location.getAutoindex() == "") {
+			new_location.setAutoindex("off");
+		}
+		if (new_location.getUploadEnable() == "on" && new_location.getUploadPath().empty()) {
+			throw std::runtime_error(ERROR_CONFIG_LOCATION_UPLOAD_ON_NO_PATH);
+		}
+		if (new_location.getClientMaxBodySize() == -1) {
+			new_location.setClientMaxBodySize(0);
+		}
+		server.addLocation(new_location);
+	}
+
+	void Nginx::clearSemicolonBuffer(std::string& buffer) {
+		if (buffer == DEFAULT_CONFIG_SERVER || buffer == "}"
+			|| buffer.substr(0, std::string(DEFAULT_CONFIG_LOCATION).length()) == DEFAULT_CONFIG_LOCATION) {
+			return;
+		}
+		if (buffer.back() != ';') {
+			throw std::runtime_error(ERROR_CONFIG_NO_SEMIKOLON + buffer);
+		}
+		buffer.pop_back();
+		if (isspace(buffer.back())) {
+			throw std::runtime_error(ERROR_CONFIG_SEMIKOLON_AFTER_CLEAR + buffer);
+		}
+	}
+
 	void Nginx::readConfigFile(const std::string& conf_path) {
 		std::ifstream	conf_read(conf_path);
 
@@ -83,9 +116,9 @@ namespace webserver {
 				}
 				checkBuffer(buffer);
 				if (brace_ == 1 && !location.getPath().empty()){
-					addLocationInServer(server, location); //TODO
+					addLocationInServer(server, location);
 				}
-				clearSemicolonBuffer(buffer); //TODO
+				clearSemicolonBuffer(buffer);
 				parsingBuffer(server, location, buffer); //TODO
 				if (brace_ == 0) {
 					addNewServer(server); //TODO
