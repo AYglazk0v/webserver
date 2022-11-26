@@ -104,7 +104,7 @@ namespace webserver {
 			std::string	findConfigPath(int argc, char** argv);
 			void		readConfigFile(const std::string& cfg_path);
 			void		clearBufferSpace(std::string &buffer);
-			void		checkBuffer(std::string& buffer);
+			void		checkBuffer(const std::string& buffer);
 			void		clearSemicolonBuffer(std::string& buffer);
 			void		parsingBuffer(const Server_info& new_server, Location& new_location, const std::string& Location);
 			
