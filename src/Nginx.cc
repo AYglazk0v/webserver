@@ -1,5 +1,6 @@
 #include "../include/Nginx.hpp"
 #include <fstream>
+#include <arpa/inet.h>
 
 namespace webserver {
 
@@ -97,6 +98,29 @@ namespace webserver {
 		}
 	}
 
+	void Nginx::parseListenHost(Server_info& server, const std::string& host) {
+		if (host == DEFAULT_CONFIG_LOCAL_HOST) {
+			server.setHost("127.0.0.1");
+		} else {
+			if (inet_addr(host.c_str()) == INADDR_NONE) {
+				throw std::runtime_error(ERROR_CONFIG_LISTEN_HOST_WRONG);
+			}
+			server.setHost(host);
+		}
+	}
+
+	void Nginx::parseListen(Server_info& server, const std::string& buffer_split) {
+		if (server.getPort() != -1 || !server.getHost().empty()) {
+			throw std::runtime_error(ERROR_CONFIG_LISTEN_AGAIN);
+		}
+		std::vector<std::string> listen_split = split(buffer_split, ":");
+		if (listen_split.size() != 2) {
+			throw std::runtime_error(ERROR_CONFIG_LISTEN_PARAM + buffer_split);
+		}
+		parseListenHost(server, listen_split[0]);
+		parseListenHost(server, listen_split[1]);
+	}
+
 	void Nginx::parsingBuffer(Server_info& server, Location& new_location, const std::string& buff) {
 		if (buff == DEFAULT_CONFIG_SERVER || buff == "}") {
 			return;
@@ -104,7 +128,7 @@ namespace webserver {
 		std::vector<std::string> buff_split = split(buff, " ");
 		if (brace_ == 1) {
 			if (buff_split[0] == DEFAULT_CONFIG_LISTEN && buff_split.size() == 2) {
-				parseListen(server, buff_split[1]); //TODO
+				parseListen(server, buff_split[1]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_SERVER_NAME && buff_split.size() >= 2) {
 				parseServerName(server, buff_split); //TODO
 			} else if (buff_split[0] == DEFAULT_CONFIG_ERROR_PAGE && buff_split.size() == 3) {

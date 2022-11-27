@@ -9,6 +9,7 @@
 # define DEFAULT_CONFIG_SERVER					"server {"
 # define DEFAULT_CONFIG_LISTEN					"listen"
 # define DEFAULT_CONFIG_SERVER_NAME				"server_name"
+# define DEFAULT_CONFIG_LOCAL_HOST				"localhost"
 # define DEFAULT_CONFIG_ERROR_PAGE				"error_page"
 # define DEFAULT_CONFIG_CLIENT_MAX_BODY_SIZE	"client_max_body_size"
 # define DEFAULT_CONFIG_ROOT					"root"
@@ -112,6 +113,7 @@ namespace webserver {
 			void		addNewServer(Server_info& new_server);
 			void		addLocationInServer(Server_info& server, Location& new_location);
 			void		parseListen(Server_info& server, const std::string& buffer_split);
+			void		parseListenHost(Server_info& server, const std::string& host);
 			void		parseListenPort(Server_info& server, const std::string& port);
 			void		parseServerName(Server_info& server, const std::vector<std::string>& buffer_split);
 			void		parseErrorPage(Server_info& server, const std::string& num_error, const std::string& error_path);

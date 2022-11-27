@@ -53,7 +53,8 @@ namespace webserver {
 			void	setListenFd(const int& repl_listen_fd_)							{ listen_fd_ = repl_listen_fd_; } 
 			void	setAddr(sockaddr_in repl_addr)									{ addr_ = repl_addr; }
 			void	setPort(const int& repl_potr)									{ port_ = repl_potr; }
-			void	setHost(const std::vector<std::string>& repl_server_name)		{ server_name_ = repl_server_name; }
+			void	setHost(const std::string& repl_host)							{ host_ = repl_host; }
+			void	setServerName(const std::vector<std::string>& repl_server_name)	{ server_name_ = repl_server_name; }
 			void	setErrorPage(const std::map<int, std::string>& repl_error_page)	{error_page_ = repl_error_page; }
 			void	setRoot(const std::string& repl_root)							{ root_ = repl_root; }
 
