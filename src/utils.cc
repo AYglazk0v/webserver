@@ -21,7 +21,15 @@ namespace webserver {
 		return false;
 	}
 
-	void clearDoubleSplash(std::string &path)
+	bool isFile(const std::string& path) {
+		struct  stat s;
+		if (stat(path.data(), &s) == 0) {
+			return S_ISREG(s.st_mode);
+		}
+		return false;
+	}
+
+	void clearDoubleSplash(std::string& path)
 	{
 		for (int i = path.size() - 1; i > 0; i--) {
 			if ((path[i] == '/' && path[i - 1] == '/') || path.back() == '/') {

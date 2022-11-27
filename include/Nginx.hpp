@@ -125,10 +125,10 @@ namespace webserver {
 			void		parseLocationAutoIndex(Location& location, const std::string& autoindex);
 			void		parseUploadPath(Location& location, const std::string& upload_path);
 			void		parseUploadEnable(Location& location, const std::string& upload_enable);
-			void		parseCgiPath(Location& location, const std::string& cgi_path);
+			void		parseCgiPath(Location& location, std::string& cgi_path);
 			void		parseCgiExt(Location& location, const std::vector<std::string>& buffer_slpit);
-			void		parseReturn(Location& Location, const std::string& ret);
-			void		parseLocationClientMaxBodySize(Location& Location, const std::string& client_max_body_size);
+			void		parseReturn(Location& location, const std::string& ret);
+			void		parseLocationClientMaxBodySize(Location& location, const std::string& client_max_body_size);
 
 			void		checkHostPort(const Server_info& server) const;
 			void		checkErrorPagePath(Server_info& server);

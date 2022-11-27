@@ -12,7 +12,7 @@ namespace webserver{
 			std::string				upload_enable_;
 			std::string				upload_path_;
 			std::string				cgi_path_;
-			std::string				cgi_ext_;
+			std::set<std::string>	cgi_ext_;
 			std::string				return_;
 			int						client_max_body_size;
 		
@@ -57,7 +57,7 @@ namespace webserver{
 			void	setUploadEnable(const std::string& repl_upload_enable)			{ upload_enable_ = repl_upload_enable; }
 			void	setUploadPath(const std::string& repl_upload_path)				{ upload_path_ = repl_upload_path; }
 			void	setCgiPath(const std::string& repl_cgi_path)					{ cgi_path_ = repl_cgi_path; }
-			void	setCgiExt(const std::string& repl_cgi_ext)						{ cgi_ext_ = repl_cgi_ext; }
+			void	setCgiExt(const std::set<std::string>& repl_cgi_ext)			{ cgi_ext_ = repl_cgi_ext; }
 			void	setReturn(const std::string& repl_return)						{return_ = repl_return; }
 			void	setClientMaxBodySize(const int& repl_client_max_body_size)		{ client_max_body_size = repl_client_max_body_size; }
 
@@ -69,7 +69,7 @@ namespace webserver{
 			const std::string&	getUploadEnable() const								{ return upload_enable_; }
 			const std::string&	getUploadPath() const								{ return upload_path_; }
 			const std::string&	getCgiPath() const									{ return cgi_path_; }
-			const std::string&	getCgiExt() const									{ return cgi_ext_; }
+			const std::set<std::string>&	getCgiExt() 						{ return cgi_ext_; }
 			const std::string&	getReturn() const									{ return return_; }
 			const int&	getClientMaxBodySize() const								{ return client_max_body_size; }
 

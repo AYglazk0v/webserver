@@ -11,7 +11,8 @@ namespace webserver {
 
 	std::vector<std::string>	split(std::string str, const std::string& delim);
 	bool						isDirectory(const std::string& path);
-	void						clearDoubleSplash(std::string &test_path);
+	bool						isFile(const std::string& path);
+	void						clearDoubleSplash(std::string& path);
 
 } // namespace webserver
 

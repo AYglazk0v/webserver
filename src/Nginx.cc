@@ -129,7 +129,7 @@ namespace webserver {
 		std::vector<std::string> server_name;
 		for (size_t i = 1, end = buffer_split.size(); i < end; ++i) {
 			for (std::vector<std::string>::const_iterator it = server_name.begin(), ite = server_name.end(); it != ite; ++it){
-			// if(std::any_of(server_name.begin(), server_name.end(), [&buffer_split, &i](std::string& str){return buffer_split[i] == str;})) {
+			// if (std::any_of(server_name.begin(), server_name.end(), [&buffer_split, &i](std::string& str){return buffer_split[i] == str;})) {
 				if (*it == buffer_split[i]){
 					throw std::runtime_error(ERROR_CONFIG_SERVER_NAME_DOUBLE + buffer_split[i]);
 				}
@@ -139,7 +139,7 @@ namespace webserver {
 		server.setServerName(server_name);
 	}
 
-	void	parseErrorPage(Server_info& server, const std::string& num_error, const std::string& error_path){
+	void Nginx::parseErrorPage(Server_info& server, const std::string& num_error, const std::string& error_path){
 		if (num_error.length() != 3 ) {
 			throw std::runtime_error(ERROR_CONFIG_ERROR_PAGE_NOT_THREE_SYM + num_error);
 		}
@@ -171,7 +171,7 @@ namespace webserver {
 		server.setRoot(root);
 	}
 	
-	void parseLocationMain(Location& location, const std::string& path) {
+	void Nginx::parseLocationMain(Location& location, const std::string& path) {
 		location.init();
 		if (path[0] != '/') {
 			throw std::runtime_error(ERROR_CONFIG_LOCATION_MAIN_PATH);
@@ -183,7 +183,7 @@ namespace webserver {
 		if (!location.getAllowMethod().empty()) {
 			throw std::runtime_error(ERROR_CONFIG_ALLOW_METHOD_AGAIN);
 		}
-		if(!(allow_method[0] == '[' && allow_method[allow_method.size() - 1] == ']')
+		if (!(allow_method[0] == '[' && allow_method[allow_method.size() - 1] == ']')
 			|| allow_method.length() <= 2) {
 			throw std::runtime_error(ERROR_CONFIG_ALLOW_METHOD_FORMAT + allow_method);
 		}
@@ -208,22 +208,22 @@ namespace webserver {
 		location.setAllowMethod(set_allow_metod);
 	}
 
-	void parseLocationIndex(Location& location, const std::string& buffer_split) {
+	void Nginx::parseLocationIndex(Location& location, const std::string& buffer_split) {
 		if (!location.getIndex().empty()) {
 			throw std::runtime_error(ERROR_CONFIG_INDEX_AGAIN);
 		}
 		location.setIndex(buffer_split);
 	}
 
-	void parseLocationRoot(Location& location, const std::string& root) {
-		if(!location.getRoot().empty()) {
+	void Nginx::parseLocationRoot(Location& location, const std::string& root) {
+		if (!location.getRoot().empty()) {
 			throw std::runtime_error(ERROR_CONFIG_LOC_ROOT_AGAIN);
 		}
 		location.setRoot(root);
 	}
 
-	void	parseLocationAutoIndex(Location& location, const std::string& autoindex) {
-		if(!location.getAutoindex().empty()) {
+	void Nginx::parseLocationAutoIndex(Location& location, const std::string& autoindex) {
+		if (!location.getAutoindex().empty()) {
 			throw std::runtime_error(ERROR_CONFIG_LOC_AUTOINDEX_AGAIN);
 		}
 		if (autoindex != "on" && autoindex != "off") {
@@ -232,7 +232,7 @@ namespace webserver {
 		location.setAutoindex(autoindex);
 	}
 	
-	void parseUploadEnable(Location& location, const std::string& upload_enable) {
+	void Nginx::parseUploadEnable(Location& location, const std::string& upload_enable) {
 		if (!location.getUploadEnable().empty()) {
 			throw std::runtime_error(ERROR_CONFIG_LOC_UPLOAD_ENABLE_AGAIN);
 		}
@@ -242,11 +242,67 @@ namespace webserver {
 		location.setUploadEnable(upload_enable);
 	}
 
-	void parseUploadPath(Location& location, const std::string& upload_path) {
+	void Nginx::parseUploadPath(Location& location, const std::string& upload_path) {
 		if (!location.getUploadPath().empty()) {
 			throw std::runtime_error(ERROR_CONFIG_LOC_UPLOAD_PATH_AGAIN);
 		}
 		location.setUploadPath(upload_path);
+	}
+
+	void Nginx::parseCgiPath(Location& location, std::string& cgi_path) {
+		if (!location.getCgiPath().empty()) {
+			throw std::runtime_error(ERROR_CONFIG_LOC_CGI_PATH_AGAIN);
+		}
+		if (!isFile(cgi_path)) {
+			throw std::runtime_error(ERROR_CONFIG_CGI_DOESNT_EXISTS + cgi_path);
+		}
+		clearDoubleSplash(cgi_path);
+		location.setCgiPath(cgi_path);
+	}
+
+	void Nginx::parseCgiExt(Location& location, const std::vector<std::string>& buffer_slpit) {
+		if (location.getCgiExt().empty()) {
+			throw std::runtime_error(ERROR_CONFIG_LOC_CGI_EXT_AGAIN);
+		}
+		std::set<std::string> cgi_ext;
+		for (size_t i = 1, end = buffer_slpit.size(); i < end; ++i) {
+			if (buffer_slpit[i][0] != '.') {
+				throw std::runtime_error(ERROR_CONFIG_LOC_CGI_EXT_NO_POINT);
+			}
+			cgi_ext.insert(buffer_slpit[i]);
+		}
+		location.setCgiExt(cgi_ext);
+	}
+
+	void Nginx::parseReturn(Location& location, const std::string& ret) {
+		if (location.getReturn().empty()) {
+			throw std::runtime_error(ERROR_CONFIG_LOC_RETURN_AGAIN);
+		}
+		location.setReturn(ret);
+	}
+
+	void Nginx::parseLocationClientMaxBodySize(Location& location, const std::string& client_max_body_size) {
+		if (location.getClientMaxBodySize() != -1) {
+			throw std::runtime_error(ERROR_CONFIG_CLIENT_MAX_BODY_AGAIN);
+		}
+		if (client_max_body_size.back() != 'm'
+				&& client_max_body_size.back() != 'k'
+				&& client_max_body_size.back() != 'b') {
+			throw std::runtime_error(ERROR_CONFIG_CLIENT_MAX_BODY_UNKNOWN_TYPE + client_max_body_size);
+		}
+		for (size_t i = 0, end = client_max_body_size.length() - 1; i < end; ++i) {
+			if (!isdigit(client_max_body_size[i])) {
+				throw std::runtime_error(ERROR_CONFIG_CLIENT_MAX_BODY_UNKNOWN_TYPE + client_max_body_size);
+			}
+		}
+		int tmp_cmbs = std::atoi(client_max_body_size.c_str());
+		if (client_max_body_size.back() == 'm') {
+			location.setClientMaxBodySize(tmp_cmbs * 1024 * 1024);
+		} else if (client_max_body_size.back() == 'k') {
+			location.setClientMaxBodySize(tmp_cmbs * 1024);
+		} else {
+			location.setClientMaxBodySize(tmp_cmbs);
+		}
 	}
 
 	void Nginx::parsingBuffer(Server_info& server, Location& new_location, const std::string& buff) {
@@ -282,13 +338,13 @@ namespace webserver {
 			} else if (buff_split[0] == DEFAULT_CONFIG_UPLOAD_PATH && buff_split.size() == 2) {
 				parseUploadPath(new_location, buff_split[1]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_CGI_PASS && buff_split.size() == 2) {
-				parseCgiPath(new_location, buff_split[1]); //TODO
+				parseCgiPath(new_location, buff_split[1]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_CGI_EXT && buff_split.size() >= 2) {
-				parseCgiExt(new_location, buff_split); //TODO
+				parseCgiExt(new_location, buff_split);
 			} else if (buff_split[0] == DEFAULT_CONFIG_RETURN && buff_split.size() == 2) {
-				parseReturn(new_location, buff_split[1]); //TODO
+				parseReturn(new_location, buff_split[1]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_CLIENT_MAX_BODY_SIZE && buff_split.size() == 2) {
-				parseLocationClientMaxBodySize(new_location, buff_split[1]); //TODO
+				parseLocationClientMaxBodySize(new_location, buff_split[1]);
 			} else {
 				throw std::runtime_error(ERROR_CONFIG_PARSING + std::string(" : ") + buff_split[0]);
 			}
