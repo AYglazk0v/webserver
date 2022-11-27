@@ -351,6 +351,42 @@ namespace webserver {
 		}
 	}
 
+	void Nginx::checkHostPort(const Server_info& server) const {
+		if (server.getHost().empty() || server.getPort() == -1) {
+			throw std::runtime_error(ERROR_CONFIG_CHECK_NECCESSARY);
+		}
+		for (std::vector<Server_info>::const_iterator it = server_info_.begin(), ite = server_info_.end(); it != ite; ++it) {
+			if (it->getHost() == server.getHost() && it->getPort() == server.getPort()) {
+				throw std::runtime_error(ERROR_CONFIG_CHECK_HOST_PORT_AGAIN);
+			}
+		}
+	}
+	
+	void checkErrorPagePath(Server_info& server) {
+		for (std::map<int, std::string>::const_iterator it = server.getErrorPage().begin(),
+				ite = server.getErrorPage().end(); it != ite; ++it) {
+			std::string test_path;
+			if (server.getRoot().empty()) {
+				test_path = std::string(".") + it->second;
+			} else {
+				test_path = server.getRoot() + it->second; 
+			}
+			if (!isFile(test_path)) {
+				throw std::runtime_error(ERROR_CONFIG_ERROR_PAGE_DOESNT_EXISTS + test_path);
+			}
+			clearDoubleSplash(test_path);
+			if (it->second != test_path) {
+				server.updateErrorPageParh(it->first, test_path);
+			}
+		}
+	}
+
+	void Nginx::addNewServer(Server_info& new_server) {
+		checkHostPort(new_server);
+		checkErrorPagePath(new_server);
+		server_info_.push_back(new_server);
+	}
+
 	void Nginx::readConfigFile(const std::string& conf_path) {
 		std::ifstream	conf_read(conf_path);
 
@@ -373,9 +409,9 @@ namespace webserver {
 					addLocationInServer(server, location);
 				}
 				clearSemicolonBuffer(buffer);
-				parsingBuffer(server, location, buffer); //TODO
+				parsingBuffer(server, location, buffer);
 				if (brace_ == 0) {
-					addNewServer(server); //TODO
+					addNewServer(server);
 				}
 			}
 		}
@@ -388,7 +424,7 @@ namespace webserver {
 	Nginx::Nginx(int argc, char** argv) {
 		std::string	conf_path = findConfigPath(argc, argv);
 		brace_ = 0;
-		readConfigFile(conf_path); //TODO
+		readConfigFile(conf_path);
 		nginxPrint(); //TODO
 	}
 
