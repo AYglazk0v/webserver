@@ -14,7 +14,7 @@ namespace webserver {
 		private:
 			std::vector<pollfd>					fds_;
 			std::map<int,Server_info>			serv_;
-			std::map<int, User>					usr_;
+			// std::map<int, User>					usr_;
 			std::map<std::string, std::string>	http_code_list_;
 			std::map<std::string, std::string>	mime_ext_list_;
 
@@ -27,7 +27,7 @@ namespace webserver {
 			Server& operator=(const Server& rhs);
 		
 		public:
-			~Server();
+			~Server(){};
 		 	Server(int argc, char** argv);
 			void		Loop();
 		

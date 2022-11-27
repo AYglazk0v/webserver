@@ -32,7 +32,7 @@ namespace webserver {
 	void clearDoubleSplash(std::string& path)
 	{
 		for (int i = path.size() - 1; i > 0; i--) {
-			if ((path[i] == '/' && path[i - 1] == '/') || path.back() == '/') {
+			if ((path[i] == '/' && path[i - 1] == '/') || *(path.end() - 1) == '/') {
 				path.erase(i, 1);
 			}
 		}

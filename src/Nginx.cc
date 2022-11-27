@@ -90,11 +90,11 @@ namespace webserver {
 			|| buffer.substr(0, std::string(DEFAULT_CONFIG_LOCATION).length()) == DEFAULT_CONFIG_LOCATION) {
 			return;
 		}
-		if (buffer.back() != ';') {
+		if (*(buffer.end() - 1) != ';') {
 			throw std::runtime_error(ERROR_CONFIG_NO_SEMIKOLON + buffer);
 		}
-		buffer.pop_back();
-		if (isspace(buffer.back())) {
+		buffer.erase(buffer.end() - 1);
+		if (isspace(*(buffer.end() - 1))) {
 			throw std::runtime_error(ERROR_CONFIG_SEMIKOLON_AFTER_CLEAR + buffer);
 		}
 	}
@@ -110,6 +110,22 @@ namespace webserver {
 		}
 	}
 
+	void Nginx::parseListenPort(Server_info &server, std::string const &port) {
+		for (int i = 0; i < port.length(); ++i){
+			if (!isdigit(port[i])){
+				throw std::runtime_error(ERROR_CONFIG_LISTEN_NOT_DIGIT_PORT + port);
+			}
+		}
+		int tmp_port = std::atoi(port.c_str());
+		if (tmp_port < 1024) {
+			throw std::runtime_error(ERROR_CONFIG_LISTEN_SPECIAL_PORT + port);
+		}
+		if (tmp_port > 65535) {
+			throw std::runtime_error(ERROR_CONFIG_LISTEN_TOO_BIG_PORT + port);
+		}
+		server.setPort(tmp_port);
+	}
+
 	void Nginx::parseListen(Server_info& server, const std::string& buffer_split) {
 		if (server.getPort() != -1 || !server.getHost().empty()) {
 			throw std::runtime_error(ERROR_CONFIG_LISTEN_AGAIN);
@@ -119,7 +135,7 @@ namespace webserver {
 			throw std::runtime_error(ERROR_CONFIG_LISTEN_PARAM + buffer_split);
 		}
 		parseListenHost(server, listen_split[0]);
-		parseListenHost(server, listen_split[1]);
+		parseListenPort(server, listen_split[1]);
 	}
 
 	void Nginx::parseServerName(Server_info& server, const std::vector<std::string>& buffer_split) {
@@ -187,7 +203,7 @@ namespace webserver {
 			|| allow_method.length() <= 2) {
 			throw std::runtime_error(ERROR_CONFIG_ALLOW_METHOD_FORMAT + allow_method);
 		}
-		allow_method.pop_back();
+		allow_method.erase(allow_method.end() - 1);
 		allow_method.erase(0,1);
 
 		std::vector<std::string> allow_method_split = split(allow_method, ",");
@@ -261,7 +277,7 @@ namespace webserver {
 	}
 
 	void Nginx::parseCgiExt(Location& location, const std::vector<std::string>& buffer_slpit) {
-		if (location.getCgiExt().empty()) {
+		if (!location.getCgiExt().empty()) {
 			throw std::runtime_error(ERROR_CONFIG_LOC_CGI_EXT_AGAIN);
 		}
 		std::set<std::string> cgi_ext;
@@ -275,7 +291,7 @@ namespace webserver {
 	}
 
 	void Nginx::parseReturn(Location& location, const std::string& ret) {
-		if (location.getReturn().empty()) {
+		if (!location.getReturn().empty()) {
 			throw std::runtime_error(ERROR_CONFIG_LOC_RETURN_AGAIN);
 		}
 		location.setReturn(ret);
@@ -285,9 +301,9 @@ namespace webserver {
 		if (location.getClientMaxBodySize() != -1) {
 			throw std::runtime_error(ERROR_CONFIG_CLIENT_MAX_BODY_AGAIN);
 		}
-		if (client_max_body_size.back() != 'm'
-				&& client_max_body_size.back() != 'k'
-				&& client_max_body_size.back() != 'b') {
+		if (*(client_max_body_size.end() - 1) != 'm'
+				&& *(client_max_body_size.end() - 1) != 'k'
+				&& *(client_max_body_size.end() - 1) != 'b') {
 			throw std::runtime_error(ERROR_CONFIG_CLIENT_MAX_BODY_UNKNOWN_TYPE + client_max_body_size);
 		}
 		for (size_t i = 0, end = client_max_body_size.length() - 1; i < end; ++i) {
@@ -296,9 +312,9 @@ namespace webserver {
 			}
 		}
 		int tmp_cmbs = std::atoi(client_max_body_size.c_str());
-		if (client_max_body_size.back() == 'm') {
+		if (*(client_max_body_size.end() - 1) == 'm') {
 			location.setClientMaxBodySize(tmp_cmbs * 1024 * 1024);
-		} else if (client_max_body_size.back() == 'k') {
+		} else if (*(client_max_body_size.end() - 1) == 'k') {
 			location.setClientMaxBodySize(tmp_cmbs * 1024);
 		} else {
 			location.setClientMaxBodySize(tmp_cmbs);
@@ -388,7 +404,7 @@ namespace webserver {
 	}
 
 	void Nginx::readConfigFile(const std::string& conf_path) {
-		std::ifstream	conf_read(conf_path);
+		std::ifstream	conf_read(conf_path.c_str());
 
 		if (!conf_read.is_open()) {
 			throw std::runtime_error(ERROR_CONFIG_OPEN + conf_path);
@@ -396,7 +412,7 @@ namespace webserver {
 		std::string	buffer;
 		Server_info	server;
 		Location	location;
-		while (conf_read.eof()) {
+		while (!conf_read.eof()) {
 			std::getline(conf_read, buffer);
 			clearBufferSpace(buffer);
 			if (!buffer.empty()) {
@@ -464,7 +480,7 @@ namespace webserver {
 
 	void Nginx::nginxPrint() const{
 		for (size_t i = 0, end = server_info_.size(); i < end; ++i) {
-			std::cout << "++++++++++++++++++++" << std::endl;
+			std::cout << "___________________________________________________________________________________" << std::endl;
 			std::cout << "SERVER " << i + 1 << " info :" << std::endl;
 			std::cout << "\tport : " << server_info_[i].getPort()<< std::endl;
 			std::cout << "\thost : " << server_info_[i].getHost()<< std::endl;
@@ -488,7 +504,7 @@ namespace webserver {
 			if (!server_info_[i].getLocation().empty()) {
 				nginxPrintLocation(server_info_[i]); //TODO
 			}
-			std::cout << "++++++++++++++++++++" << std::endl;
+			std::cout << "___________________________________________________________________________________" << std::endl;
 		}
 	}
 
