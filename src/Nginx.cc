@@ -421,6 +421,36 @@ namespace webserver {
 		conf_read.close();
 	}
 
+	void Nginx::nginxPrint() const{
+		for (size_t i = 0, end = server_info_.size(); i < end; ++i) {
+			std::cout << "++++++++++++++++++++" << std::endl;
+			std::cout << "SERVER " << i + 1 << " info :" << std::endl;
+			std::cout << "\tport : " << server_info_[i].getPort()<< std::endl;
+			std::cout << "\thost : " << server_info_[i].getHost()<< std::endl;
+			if (!server_info_[i].getServerName().empty()) {
+				std::cout << "\tserver_name : ";
+				for (std::vector<std::string>::const_iterator it = server_info_[i].getServerName().begin(),
+						ite = server_info_[i].getServerName().end(); it != ite; ++it) {
+					std::cout << *it << " ";			
+				}
+			}
+			if (!server_info_[i].getErrorPage().empty()) {
+				std::cout << "\terror_page : " << std::endl;					
+				for (std::map<int, std::string>::const_iterator it = server_info_[i].getErrorPage().begin(),
+					ite = server_info_[i].getErrorPage().end(); it != ite; ++it) {
+						std::cout << "\t\t" << it->first << "\t" << it->second << std::endl;
+				}
+			}
+			if (!server_info_[i].getRoot().empty()) {
+				std::cout << "\troot : " << server_info_[i].getRoot() << std::endl;
+			}
+			if (!server_info_[i].getLocation().empty()) {
+				nginxPrintLocation(server_info_[i]); //TODO
+			}
+			std::cout << "++++++++++++++++++++" << std::endl;
+		}
+	}
+
 	Nginx::Nginx(int argc, char** argv) {
 		std::string	conf_path = findConfigPath(argc, argv);
 		brace_ = 0;
