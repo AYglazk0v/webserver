@@ -421,6 +421,47 @@ namespace webserver {
 		conf_read.close();
 	}
 
+	void Nginx::nginxPrintLocation(const Server_info& server) const {
+		for (std::map<std::string, Location>::const_iterator it = server.getLocation().begin(),
+				ite = server.getLocation().end(); it != ite; ++it) {
+			std::cout << "\tLocation : ";
+			std::cout << it->first << std::endl;
+			if (!it->second.getAllowMethod().empty()) {
+				std::cout << "\t\tallow_method : ";
+				for (std::set<std::string>::const_iterator itt = it->second.getAllowMethod().begin(),
+						itte = it->second.getAllowMethod().end(); itt != itte; ++itt) {
+					std::cout << *itt << " ";
+				}
+				std::cout << std::endl;
+			}
+			if (!it->second.getIndex().empty()) {
+				std::cout << "\t\tIndex : " << it->second.getIndex() << std::endl;
+			}
+			if (!it->second.getRoot().empty()) {
+				std::cout << "\t\tRoot : " << it->second.getRoot() << std::endl;
+			}
+			if (it->second.getAutoindex() == "on") {
+				std::cout << "\t\tAutoindex : " << it->second.getAutoindex() << std::endl;
+			}
+			if (it->second.getUploadEnable() == "on") {
+				std::cout << "\t\tUpload_enable : " << it->second.getUploadEnable() << std::endl;
+				std::cout << "\t\tUpload_path : " << it->second.getUploadPath() << std::endl;
+			}
+			if(!it->second.getCgiPath().empty()) {
+				std::cout << "\t\tcgit_ext : ";
+				for (std::set<std::string>::const_iterator itt = it->second.getCgiExt().begin(),
+					itte = it->second.getCgiExt().end(); itt != itte; ++itt) {
+						std::cout << *itt << " ";
+				}
+				std::cout << std::endl;
+				std::cout << "\t\tcgi_path : " << it->second.getCgiPath() << std::endl;
+			}
+			if (!it->second.getReturn().empty()) {
+				std::cout << "\t\treturn : " << it->second.getReturn() << std::endl;
+			}
+		}
+	}
+
 	void Nginx::nginxPrint() const{
 		for (size_t i = 0, end = server_info_.size(); i < end; ++i) {
 			std::cout << "++++++++++++++++++++" << std::endl;
@@ -455,7 +496,7 @@ namespace webserver {
 		std::string	conf_path = findConfigPath(argc, argv);
 		brace_ = 0;
 		readConfigFile(conf_path);
-		nginxPrint(); //TODO
+		nginxPrint();
 	}
 
 } //namespace webserver
