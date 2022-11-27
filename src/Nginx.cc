@@ -1,6 +1,7 @@
 #include "../include/Nginx.hpp"
 #include <fstream>
 #include <arpa/inet.h>
+#include <algorithm>
 
 namespace webserver {
 
@@ -119,6 +120,23 @@ namespace webserver {
 		}
 		parseListenHost(server, listen_split[0]);
 		parseListenHost(server, listen_split[1]);
+	}
+
+	void Nginx::parseServerName(Server_info& server, const std::vector<std::string>& buffer_split) {
+		if (!server.getServerName().empty()) {
+			throw std::runtime_error(ERROR_CONFIG_SERVER_NAME_AGAIN);
+		}
+		std::vector<std::string> server_name;
+		for (size_t i = 1, end = buffer_split.size(); i < end; ++i) {
+			for (std::vector<std::string>::const_iterator it = server_name.begin(), ite = server_name.end(); it != ite; ++it){
+			// if(std::any_of(server_name.begin(), server_name.end(), [&buffer_split, &i](std::string& str){return buffer_split[i] == str;})) {
+				if (*it == buffer_split[i]){
+					throw std::runtime_error(ERROR_CONFIG_SERVER_NAME_DOUBLE + buffer_split[i]);
+				}
+			}
+			server_name.push_back(buffer_split[i]);
+		}
+		server.setServerName(server_name);
 	}
 
 	void Nginx::parsingBuffer(Server_info& server, Location& new_location, const std::string& buff) {
