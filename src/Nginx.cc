@@ -139,6 +139,23 @@ namespace webserver {
 		server.setServerName(server_name);
 	}
 
+	void	parseErrorPage(Server_info& server, const std::string& num_error, const std::string& error_path){
+		if (num_error.length() != 3 )
+			throw std::runtime_error(ERROR_CONFIG_ERROR_PAGE_NOT_THREE_SYM + num_error);
+		for (int i = 0; i < num_error.length(); ++i)
+			if (!isdigit(num_error[i]))
+				throw std::runtime_error(ERROR_CONFIG_ERROR_PAGE_NOT_DIGIT_ERROW + num_error);
+		int int_error = std::atoi(num_error.c_str());
+		if (int_error < 100 || int_error > 599)
+			throw std::runtime_error(ERROR_CONFIG_ERROR_PAGE_WRONG_NUMBER + num_error);
+		std::map<int, std::string> error_page = server.getErrorPage();
+		if (error_page.find(int_error) != error_page.end())
+			throw std::runtime_error(ERROR_CONFIG_ERROR_PAGE_AGAIN + num_error + " " + error_path);
+		error_page.insert(std::pair<int, std::string>(int_error, error_path));
+		server.setErrorPage(error_page);
+	}
+	
+
 	void Nginx::parsingBuffer(Server_info& server, Location& new_location, const std::string& buff) {
 		if (buff == DEFAULT_CONFIG_SERVER || buff == "}") {
 			return;
@@ -148,9 +165,9 @@ namespace webserver {
 			if (buff_split[0] == DEFAULT_CONFIG_LISTEN && buff_split.size() == 2) {
 				parseListen(server, buff_split[1]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_SERVER_NAME && buff_split.size() >= 2) {
-				parseServerName(server, buff_split); //TODO
+				parseServerName(server, buff_split);
 			} else if (buff_split[0] == DEFAULT_CONFIG_ERROR_PAGE && buff_split.size() == 3) {
-				parseErrorPage(server, buff_split[1], buff_split[2]); //TODO
+				parseErrorPage(server, buff_split[1], buff_split[2]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_ROOT && buff_split.size() == 2) {
 				parseRootServ(server, buff_split[1]); //TODO
 			} else {
