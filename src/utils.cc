@@ -1,5 +1,4 @@
 #include "../include/utils.hpp"
-#include <algorithm>
 
 namespace webserver {
 
@@ -11,6 +10,22 @@ namespace webserver {
 			ret_val.push_back(str.substr(start, end - start));
 		}
 		return ret_val;
+	}
+
+
+	bool isDirectory(const std::string& path) {
+		struct  stat s;
+		if (stat(path.data(), &s) == 0) {
+			return S_ISDIR(s.st_mode);
+		}
+		return false;
+	}
+
+	void clearDoubleSplash(std::string &path)
+	{
+		for (int i = path.size() - 1; i > 0; i--)
+			if ((path[i] == '/' && path[i - 1] == '/') || path.back() == '/')
+				path.erase(i, 1);
 	}
 
 } //webserver

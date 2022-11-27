@@ -155,6 +155,14 @@ namespace webserver {
 		server.setErrorPage(error_page);
 	}
 	
+	void Nginx::parseRootServ(Server_info& server, std::string& root) {
+		if (!server.getRoot().empty())
+			throw std::runtime_error(ERROR_CONFIG_ROOT_SERV_AGAIN);
+		if (!isDirectory(root))
+			throw std::runtime_error(ERROR_CONFIG_ROOT_DOESNT_EXISTS + root);
+		clearDoubleSplash(root);
+		server.setRoot(root);
+	}
 
 	void Nginx::parsingBuffer(Server_info& server, Location& new_location, const std::string& buff) {
 		if (buff == DEFAULT_CONFIG_SERVER || buff == "}") {
@@ -169,7 +177,7 @@ namespace webserver {
 			} else if (buff_split[0] == DEFAULT_CONFIG_ERROR_PAGE && buff_split.size() == 3) {
 				parseErrorPage(server, buff_split[1], buff_split[2]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_ROOT && buff_split.size() == 2) {
-				parseRootServ(server, buff_split[1]); //TODO
+				parseRootServ(server, buff_split[1]);
 			} else {
 				throw std::runtime_error(ERROR_CONFIG_PARSING + std::string(" : ") + buff_split[0]);
 			}
