@@ -63,7 +63,7 @@ namespace webserver{
 
 			const std::string&	getPath() const										{ return path_; }
 			const std::string&	getIndex() const									{ return index_; }
-			const std::set<std::string>&	setAllowMethod() const					{ return allow_method_; }
+			const std::set<std::string>&	getAllowMethod() const					{ return allow_method_; }
 			const std::string&	getRoot() const 									{ return root_; }
 			const std::string&	getAutoindex() const								{ return autoindex_; }
 			const std::string&	getUploadEnable() const								{ return upload_enable_; }

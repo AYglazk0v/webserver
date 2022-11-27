@@ -119,7 +119,7 @@ namespace webserver {
 			void		parseErrorPage(Server_info& server, const std::string& num_error, const std::string& error_path);
 			void		parseRootServ(Server_info& server, std::string& root);
 			void		parseLocationMain(Location& location, const std::string& path);
-			void		parseLocationAllowMethod(Location& location, const std::string& allow_method);
+			void		parseLocationAllowMethod(Location& location, std::string& allow_method);
 			
 			void		parseLocationIndex(Location& location, const std::string& buffer_split);
 			void		parseLocationRoot(Location& location, const std::string& root);

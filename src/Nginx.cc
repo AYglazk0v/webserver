@@ -179,6 +179,35 @@ namespace webserver {
 		location.setPath(path);
 	}
 
+	void Nginx::parseLocationAllowMethod(Location& location, std::string& allow_method) {
+		if (!location.getAllowMethod().empty()) {
+			throw std::runtime_error(ERROR_CONFIG_ALLOW_METHOD_AGAIN);
+		}
+		if(!(allow_method[0] == '[' && allow_method[allow_method.size() - 1] == ']')
+			|| allow_method.length() <= 2) {
+			throw std::runtime_error(ERROR_CONFIG_ALLOW_METHOD_FORMAT + allow_method);
+		}
+		allow_method.pop_back();
+		allow_method.erase(0,1);
+
+		std::vector<std::string> allow_method_split = split(allow_method, ",");
+		std::set<std::string> set_allow_metod;
+		for (size_t i = 0, end = allow_method_split.size(); i < end; ++i) {
+			if (location.getAllowMethod().find(allow_method_split[i]) != location.getAllowMethod().end()) {
+				throw std::runtime_error(ERROR_CONFIG_ALLOW_METHOD_DOUBLE + allow_method_split[i]);
+			}
+			if (allow_method_split[i] == DEFAULT_CONFIG_ALLOW_METHOD_GET
+				|| allow_method_split[i] == DEFAULT_CONFIG_ALLOW_METHOD_POST
+				|| allow_method_split[i] == DEFAULT_CONFIG_ALLOW_METHOD_PUT
+				|| allow_method_split[i] == DEFAULT_CONFIG_ALLOW_METHOD_DELETE) {
+				set_allow_metod.insert(allow_method_split[i]);
+			} else {
+				throw std::runtime_error(ERROR_CONFIG_ALLOW_METHOD_UNKNOWN + allow_method_split[i]);
+			}
+		}
+		location.setAllowMethod(set_allow_metod);
+	}
+
 	void Nginx::parsingBuffer(Server_info& server, Location& new_location, const std::string& buff) {
 		if (buff == DEFAULT_CONFIG_SERVER || buff == "}") {
 			return;
@@ -200,7 +229,7 @@ namespace webserver {
 			if (buff_split[0] == DEFAULT_CONFIG_LOCATION && buff_split.size() == 3) {
 				parseLocationMain(new_location, buff_split[1]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_ALLOW_METHOD && buff_split.size() == 2) {
-				parseLocationAllowMethod(new_location, buff_split[1]); //TODO
+				parseLocationAllowMethod(new_location, buff_split[1]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_INDEX && buff_split.size() == 2) {
 				parseLocationIndex(new_location, buff_split[1]); //TODO
 			} else if (buff_split[0] == DEFAULT_CONFIG_ROOT && buff_split.size() == 2) {
