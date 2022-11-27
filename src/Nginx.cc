@@ -362,7 +362,7 @@ namespace webserver {
 		}
 	}
 	
-	void checkErrorPagePath(Server_info& server) {
+	void Nginx::checkErrorPagePath(Server_info& server) {
 		for (std::map<int, std::string>::const_iterator it = server.getErrorPage().begin(),
 				ite = server.getErrorPage().end(); it != ite; ++it) {
 			std::string test_path;
