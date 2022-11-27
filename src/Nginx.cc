@@ -215,12 +215,38 @@ namespace webserver {
 		location.setIndex(buffer_split);
 	}
 
-
 	void parseLocationRoot(Location& location, const std::string& root) {
 		if(!location.getRoot().empty()) {
 			throw std::runtime_error(ERROR_CONFIG_LOC_ROOT_AGAIN);
 		}
 		location.setRoot(root);
+	}
+
+	void	parseLocationAutoIndex(Location& location, const std::string& autoindex) {
+		if(!location.getAutoindex().empty()) {
+			throw std::runtime_error(ERROR_CONFIG_LOC_AUTOINDEX_AGAIN);
+		}
+		if (autoindex != "on" && autoindex != "off") {
+			throw std::runtime_error(ERROR_CONFIG_LOC_AUTOINDEX_WRONG +autoindex);
+		}
+		location.setAutoindex(autoindex);
+	}
+	
+	void parseUploadEnable(Location& location, const std::string& upload_enable) {
+		if (!location.getUploadEnable().empty()) {
+			throw std::runtime_error(ERROR_CONFIG_LOC_UPLOAD_ENABLE_AGAIN);
+		}
+		if (upload_enable != "on" && upload_enable != "off") {
+			throw std::runtime_error(ERROR_CONFIG_LOC_UPLOAD_ENABLE_WRONG);
+		}
+		location.setUploadEnable(upload_enable);
+	}
+
+	void parseUploadPath(Location& location, const std::string& upload_path) {
+		if (!location.getUploadPath().empty()) {
+			throw std::runtime_error(ERROR_CONFIG_LOC_UPLOAD_PATH_AGAIN);
+		}
+		location.setUploadPath(upload_path);
 	}
 
 	void Nginx::parsingBuffer(Server_info& server, Location& new_location, const std::string& buff) {
@@ -250,11 +276,11 @@ namespace webserver {
 			} else if (buff_split[0] == DEFAULT_CONFIG_ROOT && buff_split.size() == 2) {
 				parseLocationRoot(new_location, buff_split[1]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_AUTOINDEX && buff_split.size() == 2) {
-				parseLocationAutoIndex(new_location, buff_split[1]); //TODO
+				parseLocationAutoIndex(new_location, buff_split[1]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_UPLOAD_ENABLE && buff_split.size() == 2) {
-				parseUploadEnable(new_location, buff_split[1]); //TODO
+				parseUploadEnable(new_location, buff_split[1]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_UPLOAD_PATH && buff_split.size() == 2) {
-				parseUploadPath(new_location, buff_split[1]); //TODO
+				parseUploadPath(new_location, buff_split[1]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_CGI_PASS && buff_split.size() == 2) {
 				parseCgiPath(new_location, buff_split[1]); //TODO
 			} else if (buff_split[0] == DEFAULT_CONFIG_CGI_EXT && buff_split.size() >= 2) {
