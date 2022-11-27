@@ -97,6 +97,52 @@ namespace webserver {
 		}
 	}
 
+	void Nginx::parsingBuffer(Server_info& server, Location& new_location, const std::string& buff) {
+		if (buff == DEFAULT_CONFIG_SERVER || buff == "}") {
+			return;
+		}
+		std::vector<std::string> buff_split = split(buff, " ");
+		if (brace_ == 1) {
+			if (buff_split[0] == DEFAULT_CONFIG_LISTEN && buff_split.size() == 2) {
+				parseListen(server, buff_split[1]); //TODO
+			} else if (buff_split[0] == DEFAULT_CONFIG_SERVER_NAME && buff_split.size() >= 2) {
+				parseServerName(server, buff_split); //TODO
+			} else if (buff_split[0] == DEFAULT_CONFIG_ERROR_PAGE && buff_split.size() == 3) {
+				parseErrorPage(server, buff_split[1], buff_split[2]); //TODO
+			} else if (buff_split[0] == DEFAULT_CONFIG_ROOT && buff_split.size() == 2) {
+				parseRootServ(server, buff_split[1]); //TODO
+			} else {
+				throw std::runtime_error(ERROR_CONFIG_PARSING + std::string(" : ") + buff_split[0]);
+			}
+		} else {
+			if (buff_split[0] == DEFAULT_CONFIG_LOCATION && buff_split.size() == 3) {
+				parseLocationMain(new_location, buff_split[1]); //TODO
+			} else if (buff_split[0] == DEFAULT_CONFIG_ALLOW_METHOD && buff_split.size() == 2) {
+				parseLocationAllowMethod(new_location, buff_split[1]); //TODO
+			} else if (buff_split[0] == DEFAULT_CONFIG_INDEX && buff_split.size() == 2) {
+				parseLocationIndex(new_location, buff_split[1]); //TODO
+			} else if (buff_split[0] == DEFAULT_CONFIG_ROOT && buff_split.size() == 2) {
+				parseLocationRoot(new_location, buff_split[1]); //TODO
+			} else if (buff_split[0] == DEFAULT_CONFIG_AUTOINDEX && buff_split.size() == 2) {
+				parseLocationAutoIndex(new_location, buff_split[1]); //TODO
+			} else if (buff_split[0] == DEFAULT_CONFIG_UPLOAD_ENABLE && buff_split.size() == 2) {
+				parseUploadEnable(new_location, buff_split[1]); //TODO
+			} else if (buff_split[0] == DEFAULT_CONFIG_UPLOAD_PATH && buff_split.size() == 2) {
+				parseUploadPath(new_location, buff_split[1]); //TODO
+			} else if (buff_split[0] == DEFAULT_CONFIG_CGI_PASS && buff_split.size() == 2) {
+				parseCgiPath(new_location, buff_split[1]); //TODO
+			} else if (buff_split[0] == DEFAULT_CONFIG_CGI_EXT && buff_split.size() >= 2) {
+				parseCgiExt(new_location, buff_split); //TODO
+			} else if (buff_split[0] == DEFAULT_CONFIG_RETURN && buff_split.size() == 2) {
+				parseReturn(new_location, buff_split[1]); //TODO
+			} else if (buff_split[0] == DEFAULT_CONFIG_CLIENT_MAX_BODY_SIZE && buff_split.size() == 2) {
+				parseLocationClientMaxBodySize(new_location, buff_split[1]); //TODO
+			} else {
+				throw std::runtime_error(ERROR_CONFIG_PARSING + std::string(" : ") + buff_split[0]);
+			}
+		}
+	}
+
 	void Nginx::readConfigFile(const std::string& conf_path) {
 		std::ifstream	conf_read(conf_path);
 
