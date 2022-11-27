@@ -23,9 +23,11 @@ namespace webserver {
 
 	void clearDoubleSplash(std::string &path)
 	{
-		for (int i = path.size() - 1; i > 0; i--)
-			if ((path[i] == '/' && path[i - 1] == '/') || path.back() == '/')
+		for (int i = path.size() - 1; i > 0; i--) {
+			if ((path[i] == '/' && path[i - 1] == '/') || path.back() == '/') {
 				path.erase(i, 1);
+			}
+		}
 	}
 
 } //webserver

@@ -140,28 +140,43 @@ namespace webserver {
 	}
 
 	void	parseErrorPage(Server_info& server, const std::string& num_error, const std::string& error_path){
-		if (num_error.length() != 3 )
+		if (num_error.length() != 3 ) {
 			throw std::runtime_error(ERROR_CONFIG_ERROR_PAGE_NOT_THREE_SYM + num_error);
-		for (int i = 0; i < num_error.length(); ++i)
-			if (!isdigit(num_error[i]))
+		}
+		for (int i = 0; i < num_error.length(); ++i) {
+			if (!isdigit(num_error[i])) {
 				throw std::runtime_error(ERROR_CONFIG_ERROR_PAGE_NOT_DIGIT_ERROW + num_error);
+			}
+		}
 		int int_error = std::atoi(num_error.c_str());
-		if (int_error < 100 || int_error > 599)
+		if (int_error < 100 || int_error > 599) {
 			throw std::runtime_error(ERROR_CONFIG_ERROR_PAGE_WRONG_NUMBER + num_error);
+		}
 		std::map<int, std::string> error_page = server.getErrorPage();
-		if (error_page.find(int_error) != error_page.end())
+		if (error_page.find(int_error) != error_page.end()){
 			throw std::runtime_error(ERROR_CONFIG_ERROR_PAGE_AGAIN + num_error + " " + error_path);
+		}
 		error_page.insert(std::pair<int, std::string>(int_error, error_path));
 		server.setErrorPage(error_page);
 	}
 	
 	void Nginx::parseRootServ(Server_info& server, std::string& root) {
-		if (!server.getRoot().empty())
+		if (!server.getRoot().empty()) {
 			throw std::runtime_error(ERROR_CONFIG_ROOT_SERV_AGAIN);
-		if (!isDirectory(root))
+		}
+		if (!isDirectory(root)) {
 			throw std::runtime_error(ERROR_CONFIG_ROOT_DOESNT_EXISTS + root);
+		}
 		clearDoubleSplash(root);
 		server.setRoot(root);
+	}
+	
+	void parseLocationMain(Location& location, const std::string& path) {
+		location.init();
+		if (path[0] != '/') {
+			throw std::runtime_error(ERROR_CONFIG_LOCATION_MAIN_PATH);
+		}
+		location.setPath(path);
 	}
 
 	void Nginx::parsingBuffer(Server_info& server, Location& new_location, const std::string& buff) {
@@ -183,7 +198,7 @@ namespace webserver {
 			}
 		} else {
 			if (buff_split[0] == DEFAULT_CONFIG_LOCATION && buff_split.size() == 3) {
-				parseLocationMain(new_location, buff_split[1]); //TODO
+				parseLocationMain(new_location, buff_split[1]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_ALLOW_METHOD && buff_split.size() == 2) {
 				parseLocationAllowMethod(new_location, buff_split[1]); //TODO
 			} else if (buff_split[0] == DEFAULT_CONFIG_INDEX && buff_split.size() == 2) {
