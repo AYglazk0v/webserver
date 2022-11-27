@@ -120,7 +120,6 @@ namespace webserver {
 			void		parseRootServ(Server_info& server, std::string& root);
 			void		parseLocationMain(Location& location, const std::string& path);
 			void		parseLocationAllowMethod(Location& location, std::string& allow_method);
-			
 			void		parseLocationIndex(Location& location, const std::string& buffer_split);
 			void		parseLocationRoot(Location& location, const std::string& root);
 			void		parseLocationAutoIndex(Location& location, const std::string& autoindex);

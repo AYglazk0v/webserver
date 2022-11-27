@@ -208,6 +208,21 @@ namespace webserver {
 		location.setAllowMethod(set_allow_metod);
 	}
 
+	void parseLocationIndex(Location& location, const std::string& buffer_split) {
+		if (!location.getIndex().empty()) {
+			throw std::runtime_error(ERROR_CONFIG_INDEX_AGAIN);
+		}
+		location.setIndex(buffer_split);
+	}
+
+
+	void parseLocationRoot(Location& location, const std::string& root) {
+		if(!location.getRoot().empty()) {
+			throw std::runtime_error(ERROR_CONFIG_LOC_ROOT_AGAIN);
+		}
+		location.setRoot(root);
+	}
+
 	void Nginx::parsingBuffer(Server_info& server, Location& new_location, const std::string& buff) {
 		if (buff == DEFAULT_CONFIG_SERVER || buff == "}") {
 			return;
@@ -231,9 +246,9 @@ namespace webserver {
 			} else if (buff_split[0] == DEFAULT_CONFIG_ALLOW_METHOD && buff_split.size() == 2) {
 				parseLocationAllowMethod(new_location, buff_split[1]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_INDEX && buff_split.size() == 2) {
-				parseLocationIndex(new_location, buff_split[1]); //TODO
+				parseLocationIndex(new_location, buff_split[1]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_ROOT && buff_split.size() == 2) {
-				parseLocationRoot(new_location, buff_split[1]); //TODO
+				parseLocationRoot(new_location, buff_split[1]);
 			} else if (buff_split[0] == DEFAULT_CONFIG_AUTOINDEX && buff_split.size() == 2) {
 				parseLocationAutoIndex(new_location, buff_split[1]); //TODO
 			} else if (buff_split[0] == DEFAULT_CONFIG_UPLOAD_ENABLE && buff_split.size() == 2) {
