@@ -502,7 +502,7 @@ namespace webserver {
 				std::cout << "\troot : " << server_info_[i].getRoot() << std::endl;
 			}
 			if (!server_info_[i].getLocation().empty()) {
-				nginxPrintLocation(server_info_[i]); //TODO
+				nginxPrintLocation(server_info_[i]);
 			}
 			std::cout << "___________________________________________________________________________________" << std::endl;
 		}
