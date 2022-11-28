@@ -1,12 +1,24 @@
 #include "../include/Server.hpp"
 #include <fstream>
+#include <fcntl.h>
+#include <arpa/inet.h>
+#include <algorithm>
 
 namespace {
 	void signal_handler(int signal) {
 		std::cout << "SIGNAL "<< signal << " from server" << std::endl;
 		exit(signal);
 	}
-}
+	
+	const std::string currentDataTime() {
+		time_t now = time(0);
+		struct tm tstruct;
+		char buff [80];
+		tstruct = *localtime(&now);
+		strftime(buff, sizeof(buff), "[ %Y-%m-%d %X ]  :  ", &tstruct);
+		return buff;
+	} 
+} //namespace
 
 namespace webserver {
 
@@ -80,11 +92,69 @@ namespace webserver {
 			createHttpCodeList();
 			createMimeExt();
 			
-			serverStart(nginx); //TODO
+			serverStart(nginx);
 		} catch(const std::exception& e) {
 			std::cerr << e.what() << '\n';
 			exit(EXIT_FAILURE);
 		}
 	}
-	
+
+	void Server::socketStart(const int& port, const std::string& host, Server_info& tmp_serv) {
+		int listen_fd;
+		listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+		if (listen_fd < 0) {
+			throw std::runtime_error(ERROR_SERVER_SOCKET);
+		}
+		if ((setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int))) < 0) {
+			close(listen_fd);
+			throw std::runtime_error(ERROR_SERVER_SETSOCKOPT);
+		}
+		if ((fcntl(listen_fd, F_SETFL, O_NONBLOCK)) < 0) {
+			close(listen_fd);
+			throw std::runtime_error(ERROR_SERVER_FCNTL);
+		}
+		struct	sockaddr_in serv_addr;
+		std::fill(&serv_addr,&serv_addr + sizeof(serv_addr),0);
+		serv_addr.sin_family = AF_INET;
+		serv_addr.sin_addr.s_addr = inet_addr(host.c_str());
+		serv_addr.sin_port = htons(port);
+		if ((bind(listen_fd, reinterpret_cast<struct sockaddr*>(&serv_addr), sizeof(serv_addr))) < 0) {
+			close(listen_fd);
+			throw std::runtime_error(ERROR_SERVER_BIND);
+		}
+		if ((listen(listen_fd, MAX_LISTEN)) < 0) {
+			close(listen_fd);
+			throw std::runtime_error(ERROR_SERVER_LISTEN);
+		}
+		tmp_serv.setListenFd(listen_fd);
+		tmp_serv.setAddr(serv_addr);
+	}
+
+	void Server::serverStart(const Nginx& nginx) {
+		std::cout << "___________________________________________________________________________________" << std::endl;
+		for (std::vector<Server_info>::const_iterator it = nginx.getServer().begin(),
+			ite = nginx.getServer().end(); it != ite; ++it) {
+			try {
+				Server_info tmp_server = *it;
+				socketStart(it->getPort(), it->getHost(), tmp_server); //TODO
+				struct  pollfd tmp;
+				tmp.fd = tmp_server.getListenFd();
+				tmp.events = POLLIN;
+				tmp.revents = 0;
+				fds_.push_back(tmp);
+				serv_.insert(std::pair<int, Server_info>(tmp_server.getListenFd(), tmp_server));
+				std::cout << currentDataTime() << SERVER_START << " on " <<
+						 it->getHost() << ":" << it->getPort() << std::endl;
+			} catch(const std::exception& e) {
+				std::cerr << currentDataTime() << SERVER_WARNING << " on " <<
+						it->getHost() << ":" << it->getPort() << std::endl;
+				std::cerr << "\t" << e.what() << '\n';
+			}
+		}
+		std::cout << "___________________________________________________________________________________" << std::endl;
+		if (serv_.size() == 0) {
+			throw std::runtime_error(ERROR_SERVER_NOSERVER);
+		}
+	}
+
 } //namespace webserver

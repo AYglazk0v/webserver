@@ -98,6 +98,8 @@ namespace webserver {
 		public:
 			~Nginx() {};
 			Nginx(int argc, char** argv);
+
+			std::vector<Server_info> const &getServer() const {return server_info_;}
 		
 		private:
 			void		nginxPrint() const;

@@ -74,13 +74,13 @@ namespace webserver {
 			Server& operator=(const Server& rhs);
 		
 		public:
-			~Server(){};
+			~Server() {};
 		 	Server(int argc, char** argv);
 			void		Loop();
 		
 		private:
 			void		serverStart(const Nginx& nginx);
-			void		socketStart(const int& port, std::string& host, Server_info& tmp_server);
+			void		socketStart(const int& port, const std::string& host, Server_info& tmp_server);
 			void		createHttpCodeList();
 			void		createMimeExt();
 			void		clearBuffer(std::string& buffer);
