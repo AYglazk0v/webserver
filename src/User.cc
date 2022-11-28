@@ -489,8 +489,8 @@ namespace webserver {
 		}
 		std::string boundary;
 		std::string boundary_end;
-		std::map<std::string, std::string>::iterator it_content = _requst_header.find("Content-Type");
-		if (it_content != _requst_header.end()
+		std::map<std::string, std::string>::iterator it_content = request_header_.find("Content-Type");
+		if (it_content != request_header_.end()
 			&& it_content->second.find("multipart/form-data") != std::string::npos) {
 			if (it_content->second.find("boundary") == std::string::npos) {
 				throw "400 REQUEST ERROR! multipart/form-data have no boundery";
