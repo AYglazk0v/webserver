@@ -76,7 +76,7 @@ namespace webserver
 
 		void			createResponseBodyFromFile(const std::string& body_path_to_file);
 		void			createResponseErrorBody(const std::string& msg_error);
-		void			createResponceBodyDirectory(const std::string& dir_path);
+		void			createResponseBodyDirectory(const std::string& dir_path);
 
 		void			parseResponseCGI();
 		void			CGIsetEnv();
