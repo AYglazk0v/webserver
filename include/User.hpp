@@ -95,7 +95,11 @@ namespace webserver
 
 		const std::string&	getResponse() const;
 		const std::string&	getResponseHeader() const;
-		const std::string&	getResponseSendPos() const;
+		const int	getResponseSendPos() const;
+
+		void	 			updateResponseSendPos(const int& send);
+		void				createResponse();
+		void				createResponseError(const std::string& msg_error);
 	};//User
 	
 } // namespace webserver

@@ -116,7 +116,7 @@ namespace webserver {
 			ite = nginx.getServer().end(); it != ite; ++it) {
 			try {
 				Server_info tmp_server = *it;
-				socketStart(it->getPort(), it->getHost(), tmp_server); //TODO
+				socketStart(it->getPort(), it->getHost(), tmp_server); 
 				struct  pollfd tmp;
 				tmp.fd = tmp_server.getListenFd();
 				tmp.events = POLLIN;
@@ -156,25 +156,162 @@ namespace webserver {
 		}
 	}
 
+	void Server::pollWait() {
+		std::string dot[10] = {"     ", ".    ", "..   ", "...  ", ".... ", ".....", ".... ", "...  ", "..   ", ".    "};
+		int poll_count = 0;
+		int n = 0;
+		while (poll_count == 0) {
+			std::cout << SERVER_POOL_WAIT << dot[n++] << std::flush;
+			poll_count = poll(&(fds_.front()), fds_.size(), TIMEOUT);
+			if (n == 10) {
+				checkUserTimeOut();
+				n = 0;
+			}
+			if (poll_count < 0) {
+				std::cout << SERVER_POOL_WAIT_MINUS_ONE << std::endl;
+				poll_count = 0;
+			}
+		}
+		std::cout << "\r" << currentDataTime() << "\t" << SERVER_POOL_WAIT_CONNECTION << std::endl;
+	}
+
+	void Server::pollInServer(std::vector<pollfd>::iterator& it) {
+		if (DEBUG == 1) {
+			std::cout << SERVER_POOLIN_RECIEVED_SERV << it->fd << std::endl;
+		}
+		it->revents = 0;
+		sockaddr_in addr;
+		socklen_t addr_len = sizeof(addr);
+		int user_fd = accept(it->fd, reinterpret_cast<struct sockaddr*>(&addr), &addr_len);
+		if (user_fd < 0) {
+			std::cout << ERROR_SERVER_POOLIN_NEW_CONN << std::endl;
+		} else {
+			char buff[16];
+			inet_ntop(AF_INET, &addr.sin_addr, buff, sizeof(buff));
+			std::cout << SERVER_POOLIN_NEW_CONN << user_fd << " from : " << buff << std::endl;
+			User new_usr(user_fd, &serv_[it->fd], addr, &http_code_list_, &mime_ext_list_);
+			struct  pollfd tmp;
+			tmp.fd = user_fd;
+			tmp.events = POLLIN;
+			tmp.revents = 0;
+			if (fcntl(user_fd, F_SETFL, O_NONBLOCK) < 0) {
+				std::cout << ERROR_SERVER_POOLIN_FCNTL << std::endl;
+				close(user_fd);
+				return;
+			}
+			fds_.push_back(tmp);
+			usr_.insert(std::pair<int, User>(user_fd, new_usr));
+		}
+	}
+
+	void Server::pollInUser(std::vector<pollfd>::iterator& it) {
+		if (DEBUG == 1) {
+			std::cout << SERVER_POOLIN_RECIEVED_USER << it->fd << std::endl;
+		}
+		it->revents = 0;
+		User *itu = &usr_.find(it->fd)->second;
+		itu->UpdateActiveTime();
+
+		char buffer[MAX_BUFFER_RECV];
+		int nbytes = recv(it->fd, buffer, MAX_BUFFER_RECV - 1 , 0);
+		if (nbytes < 0) {
+			std::cout<< ERROR_SERVER_POOLIN_USER_READ << it->fd << std::endl;
+			user_close_.insert(it->fd);
+		} else if (nbytes == 0) {
+			std::cout << SERVER_POOLIN_USER_SESS_END << it->fd << std::endl;
+			user_close_.insert(it->fd);
+		} else {
+			if (itu->recvRequest(buffer, nbytes) == false) {
+				return;
+			}
+			std::cout << SERVER_POOLIN_USER_READ_END << it->fd << std::endl;
+			try {
+				itu->checkAndParseRequest();
+				itu->createResponse();
+
+			} catch (const char* s) {
+				std::cout<< s << " " << it->fd << std::endl;
+				itu->createResponseError(s);
+			} catch (const std::exception& e) {
+				std::cerr << e.what() << std::endl;
+				itu->createResponseError("500 Unexpected Error...");
+			}
+			itu->requestPrint();
+			itu->responsePrint();
+			it->events = POLLOUT;
+		}
+	}
+
+	void Server::pollOut(std::vector<pollfd>::iterator& it) {
+		if (DEBUG == 1) {
+			std::cout << SERVER_POOLOUT_RECIEVED << it->fd << std::endl;
+		}
+		it->revents = 0;
+		User *itu = &usr_.find(it->fd)->second;
+		itu->UpdateActiveTime();
+		int n = 0;
+		while(true) {
+			int result = send(it->fd, itu->getResponse().c_str() + itu->getResponseSendPos(),
+					itu->getResponse().length() - itu->getResponseSendPos(), 0);
+			if (result < 0 || (result == 0 && itu->getResponse().length() - itu->getResponseSendPos() > 0)) {
+				n++;
+			} else {
+				itu->updateResponseSendPos(result);
+				break ;
+			}
+			if (n < RETRY_TO_SEND) {
+				std::cout<< ERROR_SERVER_POOLIN_USER_SEND << it->fd << std::endl;
+				user_close_.insert(it->fd);
+				return ;
+			}
+		}
+		if (itu->getResponse().length() - itu->getResponseSendPos() > 0) {
+			return ;
+		}
+		std::cout << SERVER_POOLOUT_USER_SEND_END << it->fd << ". ";
+		if (itu->getResponseHeader().find("Connection: close") != std::string::npos) {
+			std::cout << SERVER_POOLOUT_CLOSE << std::endl;
+			user_close_.insert(it->fd);
+		} else {
+			std::cout << SERVER_POOLOUT_NOT_CLOSE << std::endl;
+			itu->clearAll();
+			it->events = POLLIN;
+		}
+	}
+
+	void Server::pollElse(std::vector<pollfd>::iterator& it) {
+		if (DEBUG == 1) {
+			std::cout << SERVER_POOLERR_RECIEVED << it->fd << " : ";
+		}
+		if (it->revents & POLLNVAL) {
+			std::cout << SERVER_POLLNVAL << std::endl;
+		} else if (it->revents & POLLHUP) {
+			std::cout << SERVER_POLLHUP << std::endl;
+		} else if (it->revents & POLLERR) {
+			std::cout << SERVER_POLLERR << std::endl;
+		}
+		user_close_.insert(it->fd);
+	}
+
 	void Server::Loop() {
 		while (true) {
 			if (DEBUG == 1) {
 				std::cout << "Numbeer of listenning fd : " << fds_.size() << std::endl;
 			}
-			pollWait(); //TODO
+			pollWait();
 			for (std::vector<pollfd>::iterator it = fds_.begin(), ite = fds_.end(); it != ite; ++it) {
 				if (it->revents == 0) {
 					continue;
 				}
 				if (it->revents & POLLIN && serv_.find(it->fd) != serv_.end()) {
-					pollInServer(it); //TODO
+					pollInServer(it);
 					break;
 				} else if (it->revents & POLLIN) {
-					pollInUser(it); //TODO
+					pollInUser(it);
 				} else if (it->revents & POLLOUT) {
-					pollOut(it); //TODO
+					pollOut(it);
 				} else {
-					pollElse(it); //TODO
+					pollElse(it);
 				}
 			}
 			closeConnection(); //TODO
