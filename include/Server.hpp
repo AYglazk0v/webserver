@@ -9,6 +9,7 @@
 # include <time.h>
 
 
+# define DEBUG				1
 # define MIME_PATH			"./config/mime.conf"
 # define MAX_BUFFER_RECV	65535	// max possible read
 # define MAX_LISTEN			1024	// number of listen

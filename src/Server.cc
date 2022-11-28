@@ -41,7 +41,6 @@ namespace webserver {
 		http_code_list_["508"] = "Loop Detected";
 	}
 
-
 	void Server::clearBuffer(std::string &buffer) {
 		int n = buffer.find("#");
 		if (n != std::string::npos) {
@@ -79,26 +78,7 @@ namespace webserver {
 		}
 		mime_read.close();
 	}
-
-	Server::Server(int argc, char** argv) {
-		try {
-			signal(SIGPIPE, SIG_IGN);
-			signal(SIGINT, signal_handler);
-			signal(SIGQUIT, signal_handler);
-			signal(SIGTSTP, signal_handler);
-			
-			Nginx	nginx(argc, argv);
-			
-			createHttpCodeList();
-			createMimeExt();
-			
-			serverStart(nginx);
-		} catch(const std::exception& e) {
-			std::cerr << e.what() << '\n';
-			exit(EXIT_FAILURE);
-		}
-	}
-
+	
 	void Server::socketStart(const int& port, const std::string& host, Server_info& tmp_serv) {
 		int listen_fd;
 		listen_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -154,6 +134,51 @@ namespace webserver {
 		std::cout << "___________________________________________________________________________________" << std::endl;
 		if (serv_.size() == 0) {
 			throw std::runtime_error(ERROR_SERVER_NOSERVER);
+		}
+	}
+
+	Server::Server(int argc, char** argv) {
+		try {
+			signal(SIGPIPE, SIG_IGN);
+			signal(SIGINT, signal_handler);
+			signal(SIGQUIT, signal_handler);
+			signal(SIGTSTP, signal_handler);
+			
+			Nginx	nginx(argc, argv);
+			
+			createHttpCodeList();
+			createMimeExt();
+			
+			serverStart(nginx);
+		} catch(const std::exception& e) {
+			std::cerr << e.what() << '\n';
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	void Server::Loop() {
+		while (true) {
+			if (DEBUG == 1) {
+				std::cout << "Numbeer of listenning fd : " << fds_.size() << std::endl;
+			}
+			pollWait(); //TODO
+			for (std::vector<pollfd>::iterator it = fds_.begin(), ite = fds_.end(); it != ite; ++it) {
+				if (it->revents == 0) {
+					continue;
+				}
+				if (it->revents & POLLIN && serv_.find(it->fd) != serv_.end()) {
+					pollInServer(it); //TODO
+					break;
+				} else if (it->revents & POLLIN) {
+					pollInUser(it); //TODO
+				} else if (it->revents & POLLOUT) {
+					pollOut(it); //TODO
+				} else {
+					pollElse(it); //TODO
+				}
+			}
+			closeConnection(); //TODO
+			checkUserTimeOut(); //TODO
 		}
 	}
 
