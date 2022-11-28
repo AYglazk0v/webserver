@@ -293,6 +293,50 @@ namespace webserver {
 		user_close_.insert(it->fd);
 	}
 
+	void Server::closeConnection()
+	{
+		for (std::set<int>::iterator it = user_close_.begin(), 
+				ite = user_close_.end(); it != ite; it++) {
+			for (std::vector<pollfd>::iterator itt = fds_.begin(),
+					itte = fds_.end(); itt != itte; it++) {
+				if (*it == itt->fd) {
+					close(itt->fd); 
+					usr_.erase(itt->fd);
+					fds_.erase(itt);
+					break ;
+				}
+			}
+		}
+		user_close_.clear();
+	}
+
+	void Server::checkUserTimeOut() { //МБ ЕСТЬ ОШИБКА ЧЕНКУТЬ!!!
+		if (time(0) - check_session_ < TIMEOUT_USER / 2) {
+			return ;
+		}
+		for (std::map<int, User>::iterator it = usr_.begin(), ite = usr_.end(), itt; it !=ite; itt = it++) {
+			if ((time(0) - it->second.getActiveTime()) >= TIMEOUT_USER) {
+				int del_fd = itt->first;
+				for (std::vector<pollfd>::iterator it_fd = fds_.begin(),
+						ite_fd = fds_.end(); it_fd != ite_fd; ++it_fd) {
+					if (it_fd->fd == del_fd) {
+						if (itt->second.getRequest().empty()) {
+							close(it_fd->fd);
+							fds_.erase(it_fd);
+							usr_.erase(itt);
+							std::cout << "\t\ttimeout: user disconected " << del_fd << std::endl;
+						} else {
+							it_fd->events = POLLOUT;
+							itt->second.createResponseError("504 ... send to close TIMEOUT");
+						}
+						break ;
+					}
+				}
+			}
+		}
+		check_session_ = time(0);
+	}
+
 	void Server::Loop() {
 		while (true) {
 			if (DEBUG == 1) {
@@ -314,8 +358,8 @@ namespace webserver {
 					pollElse(it);
 				}
 			}
-			closeConnection(); //TODO
-			checkUserTimeOut(); //TODO
+			closeConnection();
+			checkUserTimeOut();
 		}
 	}
 
