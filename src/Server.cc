@@ -1,6 +1,7 @@
 #include "../include/Server.hpp"
 #include <fstream>
 #include <fcntl.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include <algorithm>
 
