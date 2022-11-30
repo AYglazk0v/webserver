@@ -1,7 +1,4 @@
 #include "../include/Nginx.hpp"
-#include <fstream>
-#include <arpa/inet.h>
-#include <algorithm>
 
 namespace webserver {
 

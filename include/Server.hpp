@@ -7,6 +7,7 @@
 # include <poll.h>
 # include <signal.h>
 # include <time.h>
+# include <fcntl.h>
 
 
 # define DEBUG				1

@@ -2,6 +2,9 @@
 # define USER_HPP
 
 # include "Server_info.hpp"
+# include "utils.hpp"
+# include <sys/dir.h>
+# include <sys/wait.h>
 
 # define HEADER_FIELD_SIZE		100
 # define HEADER_KEY_LENGTH		100

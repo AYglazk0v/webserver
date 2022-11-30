@@ -6,7 +6,6 @@
 # include <map>
 # include <set>
 # include <iostream>
-
 # include <netinet/ip.h>
 
 # include "Location.hpp"
