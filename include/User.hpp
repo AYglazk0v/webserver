@@ -8,6 +8,8 @@
 
 # define HEADER_CHUNKED_METHOD					"Transfer-Encoding: chunked"
 # define HEADER_CONTENT_LENGHT_MEHOD			"Content-Length: "
+# define HEADER_LOCATION						"Location:"
+# define HEADER_STATUS							"Status:"
 # define END_OF_LINE_CHUNKED					"\r\n"
 # define END_HEADER_HTPP						"\r\n\r\n"
 # define END_USEFUL_BLOOCK_IN_CHUNKED_METHOD	"\r\n0\r\n\r\n"
@@ -20,10 +22,19 @@
 # define HTTP_VERSION_1_1						"HTTP/1.1"
 # define HTTP_VERSION_1_0						"HTTP/1.0"
 
+# define STATUS_200_OK							"200"
+# define STATUS_201_CREATED						"201"
+# define STATUS_204_NO_CONTENT					"204"
 # define REQ_ERROR_400							"400 REQUEST ERROR! "
+# define ERROR_403								"403 ERROR! "
+# define ERROR_404								"404 ERROR! "
 # define REQ_ERROR_405							"405 REQUEST ERROR! "
+# define RESP_ERROR_405							"405 RESPONSE ERROR! "
 # define REQ_ERROR_414							"414 REQUEST ERROR! "
+# define ERROR_500								"500 ERROR! "
+# define ERROR_502								"502 ERROR! "
 # define REQ_ERROR_505							"505 REQUEST ERROR! "
+# define ERROR_508								"508 ERROR! "
 
 # define HEADER_FIELD_SIZE						100
 # define HEADER_KEY_LENGTH						100

@@ -246,7 +246,7 @@ namespace webserver {
 						tmp_path = request_uri_;
 						n++;
 						if (n == 5) {
-							throw "508 loop return in config";
+							throw ERROR_508 + std::string("loop return in config");
 						}
 						continue ;
 					}
@@ -254,7 +254,7 @@ namespace webserver {
 				break;
 			}
 			if (tmp_path == "/") {
-				throw "404 ... path not found _ParseRequestFindLocation : ";
+				throw ERROR_404 + std::string("path not found parseRequestFindLocation");
 			}
 			tmp_path = tmp_path.substr(0, tmp_path.rfind('/'));
 			if (tmp_path.empty()) {
@@ -278,8 +278,8 @@ namespace webserver {
 
 	void User::createResponseReturnHeader() {
 		status_code_ = "301";
-		response_header_ += request_protocol_ + " " + status_code_ + " " + http_code_list_->find(status_code_)->second + "\r\n";
-		response_header_ += "Location:" + response_location_->getReturn() + "\r\n";
+		response_header_ += request_protocol_ + " " + status_code_ + " " + http_code_list_->find(status_code_)->second + END_OF_LINE_CHUNKED;
+		response_header_ += HEADER_LOCATION + response_location_->getReturn() + END_OF_LINE_CHUNKED;
 	}
 
 
@@ -303,7 +303,7 @@ namespace webserver {
 		setenv("PATH_TRANSLATED", response_path_.c_str(), 1);
 		setenv("REMOTE_IDENT", "", 1);
 		setenv("REMOTE_USER", "", 1);
-		setenv("REDIRECT_STATUS", "200", 1);
+		setenv("REDIRECT_STATUS", STATUS_200_OK, 1);
 		for (std::map<std::string, std::string>::iterator it = request_header_.begin(),
 			ite = request_header_.end(); it != ite; ++it)
 		{
@@ -317,12 +317,12 @@ namespace webserver {
 
 	void User::CGIparseBody() {
 		size_t end;
-		while ((end = response_body_.find("\r\n")) != std::string::npos) {
+		while ((end = response_body_.find(END_OF_LINE_CHUNKED)) != std::string::npos) {
 			std::vector<std::string> cgi_body_split= split(response_body_.substr(0, end), " ");	
-			if (!cgi_body_split.empty() && cgi_body_split[0] == "Status:") {
-				if (cgi_body_split[1] != "200") {
+			if (!cgi_body_split.empty() && cgi_body_split[0] == HEADER_STATUS) {
+				if (cgi_body_split[1] != STATUS_200_OK) {
 					if (http_code_list_->find(cgi_body_split[1]) == http_code_list_->end()) {
-						throw "500 .... No error code find in CGI";
+						throw ERROR_500 + std::string("No error code find in CGI");
 					}
 					std::string error = cgi_body_split[1] + " Error from CGI";
 					throw error.c_str();
@@ -334,7 +334,7 @@ namespace webserver {
 			}
 			response_body_.erase(0, end + 2);
 		}
-		status_code_ = "200";
+		status_code_ = STATUS_200_OK;
 	}
 
 	void User::parseResponseCGI() {
@@ -352,7 +352,7 @@ namespace webserver {
 
 		pid_t pid = fork();
 		if (pid == -1) {
-			throw "502 Could not create process in CgiHandler";
+			throw ERROR_502 + std::string("Could not create process in CgiHandler");
 		}
 		if (pid == 0) {
 			extern char **environ;
@@ -371,10 +371,10 @@ namespace webserver {
 		}
 		int status;
 		if (waitpid(pid, &status, 0) == -1) {
-			throw "500 ... waitpid error";
+			throw ERROR_500 + std::string("waitpid error");
 		}
 		if (WIFEXITED(status) && WEXITSTATUS(status)) {
-			throw "502 ... cgi status error";
+			throw ERROR_502 + std::string ("cgi status error");
 		}
 		lseek(fdOutput, 0, SEEK_SET);
 		int size_buf = 65535;
@@ -382,7 +382,7 @@ namespace webserver {
 		int ret;
 		while ((ret = read(fdOutput, buffer, size_buf - 1)) != 0) {
 			if (ret == -1) {
-				throw "500 .... Error read from tmpfile in CGI";
+				throw ERROR_500 + std::string("Error read from tmpfile in CGI");
 			}
 			response_body_.append(buffer, ret);
 		}
@@ -406,13 +406,13 @@ namespace webserver {
 			std::string buffer;
 			std::ifstream open_file(body_path_to_file);
 			if (!open_file.is_open()) {
-				throw "500 ...... File Body Cannot Open";	
+				throw ERROR_500 + std::string(" File Body Cannot Open");	
 			}
 			while(std::getline(open_file, buffer)) {
 				response_body_ += buffer + "\n";
 			}
 			open_file.close();
-			status_code_ = "200";
+			status_code_ = STATUS_200_OK;
 		}
 	}
 
@@ -468,20 +468,20 @@ namespace webserver {
 			response_ext_ = response_path_.substr(response_path_.rfind('.'));
 		}
 		if (response_location_->getAllowMethod().find(request_method_) == response_location_->getAllowMethod().end()) {
-			throw "405 Not Allow _ParseResponseGetBody";
+			throw RESP_ERROR_405 + std::string("Not Allow parseResponseGetBody");
 		} else if (response_dir_ == true && response_location_->getAutoindex() == "on") {
 			createResponseBodyDirectory(response_path_);
 		} else if (response_file_ == true) {
 			createResponseBodyFromFile(response_path_);
 		} else {
-			throw "404 ..... path not found _ParseResponseGetBody : ";
+			throw ERROR_404 + std::string("path not found parseResponseGetBody");
 		}
 	}
 
 	void User::parseResponseUpload() {
 		std::string upload_dir = server_->getRoot() + response_location_->getUploadPath();
 		if (!isDirectory(upload_dir)) {
-			throw "500 no dir for upload in POST";
+			throw ERROR_500 + std::string("no dir for upload in POST");
 		}
 		std::string boundary;
 		std::string boundary_end;
@@ -494,11 +494,11 @@ namespace webserver {
 			std::string name_boundary = "boundary=";
 			int name_boundary_len = name_boundary.length();
 			int position_bounery_start = it_content->second.find(name_boundary) + name_boundary_len;
-			int position_bounery_end = it_content->second.find("\r\n", position_bounery_start);
+			int position_bounery_end = it_content->second.find(END_OF_LINE_CHUNKED, position_bounery_start);
 			boundary = "--" + it_content->second.substr(position_bounery_start, position_bounery_end - position_bounery_start);
 			boundary_end = boundary + "--";
 		} else {
-			throw "500 REQUEST ERROR! wrong form for upload";
+			throw ERROR_500 + std::string("wrong form for upload");
 		}
 		std::string file_name;
 		std::string path_file;
@@ -518,12 +518,12 @@ namespace webserver {
 
 		std::ofstream tmp_file(path_file);
 		if (!tmp_file.is_open()) {
-			throw "500 cannot creat file in POST";
+			throw ERROR_500 "cannot creat file in POST";
 		}
 		tmp_file << request_body_;
 		tmp_file.close();
 		createResponseBodyDirectory(upload_dir);
-		status_code_ = "200";
+		status_code_ = STATUS_200_OK;
 	}
 
 	void User::parseResponsePostBody(){
@@ -546,7 +546,7 @@ namespace webserver {
 				&& response_location_->getCgiExt().find(response_ext_) != response_location_->getCgiExt().end()) {
 				parseResponseCGI();
 			} else if (response_location_->getAllowMethod().find(request_method_) == response_location_->getAllowMethod().end()) {
-				throw "405 Not Allow _ParseResponsePostBody";
+				throw RESP_ERROR_405 "Not Allow parseResponsePostBody";
 			} else if (response_location_->getUploadEnable() == "on") {
 				parseResponseUpload();
 			} else if (response_file_ == true) {
@@ -559,32 +559,32 @@ namespace webserver {
 
 	void User::parseResponseDeleteBody() {
 		if (response_location_->getAllowMethod().find(request_method_) == response_location_->getAllowMethod().end()) {
-			throw "405 Not Allow11111";
+			throw RESP_ERROR_405 "Not Allow";
 		} else if (response_dir_ == false && response_file_ == false) {
-			throw "404 ..... path not found _ParseResponseDeleteBody : ";
+			throw  ERROR_404 "path not found parseResponseDeleteBody : ";
 		} else if (access(response_path_.c_str(), W_OK) != 0) {
-			throw "403 no access";
+			throw ERROR_403 "no access";
 		} else if (std::remove(response_path_.c_str()) != 0) {
-			throw "500 .... Delete Error";
+			throw ERROR_500 "Delete Error";
 		}
 		response_body_ += "<html>\r\n<body>\r\n<h1>File deleted.</h1>\r\n</body>\r\n</html>\r\n";
-		status_code_ = "200";
+		status_code_ = STATUS_200_OK;
 	}
 
 	void User::parseResponsePutBody() {
 		if (response_location_->getAllowMethod().find(request_method_) == response_location_->getAllowMethod().end()) {
-			throw "405 Not Allow _ParseResponsePutBody";
+			throw RESP_ERROR_405 "Not Allow parseResponsePutBody";
 		}
 		if (response_location_->getUploadEnable() == "off") {
-			throw "400 not allow to upload";
+			throw REQ_ERROR_400 "not allow to upload";
 		}
 		if (request_uri_ == "/") {
-			throw "400 no file in PUT";
+			throw REQ_ERROR_400 "no file in PUT";
 		} 
 		std::string file_name = request_uri_.substr(request_uri_.rfind("/"));
 		std::string upload_dir = server_->getRoot() + response_location_->getUploadPath();
 		if (!isDirectory(upload_dir)) {
-			throw "500 no dir for upload in PUT";
+			throw ERROR_500 "no dir for upload in PUT";
 		}
 		std::string path_file = upload_dir + file_name;
 		if (isFile(path_file)) {
@@ -594,7 +594,7 @@ namespace webserver {
 		}
 		std::ofstream tmp_file(path_file);
 		if (!tmp_file.is_open())
-			throw "500 cannot creat file in PUT"; 
+			throw ERROR_500 "cannot creat file in PUT"; 
 		tmp_file << request_body_;
 		tmp_file.close();
 	}
