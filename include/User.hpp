@@ -6,9 +6,28 @@
 # include <sys/dir.h>
 # include <sys/wait.h>
 
-# define HEADER_FIELD_SIZE		100
-# define HEADER_KEY_LENGTH		100
-# define HEADER_VALUE_LENGTH	2048
+# define HEADER_CHUNKED_METHOD					"Transfer-Encoding: chunked"
+# define HEADER_CONTENT_LENGHT_MEHOD			"Content-Length: "
+# define END_OF_LINE_CHUNKED					"\r\n"
+# define END_HEADER_HTPP						"\r\n\r\n"
+# define END_USEFUL_BLOOCK_IN_CHUNKED_METHOD	"\r\n0\r\n\r\n"
+# define END_BLOCK_IN_CHUNKED_METHOD			"0\r\n\r\n"
+# define METHOD_GET								"GET"
+# define METHOD_POST							"POST"
+# define METHOD_PUT								"PUT"
+# define METHOD_DELETE							"DELETE"
+# define HEADER_KEY_VALUE_DELIMETR				": "
+# define HTTP_VERSION_1_1						"HTTP/1.1"
+# define HTTP_VERSION_1_0						"HTTP/1.0"
+
+# define REQ_ERROR_400							"400 REQUEST ERROR! "
+# define REQ_ERROR_405							"405 REQUEST ERROR! "
+# define REQ_ERROR_414							"414 REQUEST ERROR! "
+# define REQ_ERROR_505							"505 REQUEST ERROR! "
+
+# define HEADER_FIELD_SIZE						100
+# define HEADER_KEY_LENGTH						100
+# define HEADER_VALUE_LENGTH					2048
 
 namespace webserver
 {

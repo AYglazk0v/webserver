@@ -115,11 +115,11 @@ namespace webserver {
 	}
 
 	void User::checkBodyLenght() {
-		if (request_.find("Transfer-Encoding: chunked", 0) != std::string::npos) {
+		if (request_.find(HEADER_CHUNKED_METHOD, 0) != std::string::npos) {
 			is_chunked_ = true;
-		} else if (request_.find("Content-Length: ", 0) != std::string::npos) {
+		} else if (request_.find(HEADER_CONTENT_LENGHT_MEHOD, 0) != std::string::npos) {
 			is_content_length_ = true;
-			std::string len_type = "Content-Length: ";
+			std::string len_type = HEADER_CONTENT_LENGHT_MEHOD;
 			size_t len_start = request_.find(len_type) + len_type.length();
 			size_t len_end = request_.find("\r\n", len_start);
 			content_length_ = std::atoi(request_.substr(len_start, len_end - len_start).c_str());
@@ -127,7 +127,7 @@ namespace webserver {
 	}
 
 	bool User::recvHeader() {
-		if (request_.find("\r\n\r\n", 0) != std::string::npos) {
+		if (request_.find(END_HEADER_HTPP, 0) != std::string::npos) {
 			recv_header_ = true;
 			checkBodyLenght();
 			return true;
@@ -136,9 +136,9 @@ namespace webserver {
 	}
 
 	bool User::recvBody() {
-		if (is_chunked_ && request_.find("0\r\n\r\n", 0) == std::string::npos) {
+		if (is_chunked_ && request_.find(END_BLOCK_IN_CHUNKED_METHOD, 0) == std::string::npos) {
 			return false;
-		} else if (is_content_length_ && request_.size() < request_.find("\r\n\r\n", 0) + 4 + content_length_) {
+		} else if (is_content_length_ && request_.size() < request_.find(END_HEADER_HTPP, 0) + 4 + content_length_) {
 			return false;
 		}
 		recv_body_ = true;
@@ -159,8 +159,8 @@ namespace webserver {
 	void User::parseRequestMethod(const std::string& method_string) {
 		std::vector<std::string> msg = split(method_string, " ");
 		if (msg.size() != 3) {
-			request_protocol_ = "HTTP/1.1";
-			throw "400 REQUEST ERROR! Wrong first line in reqest";
+			request_protocol_ = HTTP_VERSION_1_1;
+			throw REQ_ERROR_400 + std::string("Wrong first line in reqest");
 		}
 		request_method_ = msg[0];
 		int find_path_delim = msg[1].find("?");
@@ -172,43 +172,44 @@ namespace webserver {
 			request_query_ = msg[1].substr(find_path_delim + 1);
 		}
 		request_protocol_ = msg[2];
-		if (msg[0] != "GET" && msg[0] != "POST" && msg[0] != "PUT" && msg[0] != "DELETE") {
-			throw "405 REQUEST ERROR! Wrong method in reqest";
+		if (msg[0] != METHOD_GET && msg[0] != METHOD_POST
+				&& msg[0] != METHOD_PUT && msg[0] != METHOD_DELETE) {
+			throw REQ_ERROR_405 + std::string("Wrong method in reqest");
 		}
 		if (msg[1].length() > 2048) {
-			throw "414 REQEST ERROR! Wrong URI length";
+			throw REQ_ERROR_414 +std::string("Wrong URI length");
 		}
-		if (msg[2] != "HTTP/1.1" && msg[2] != "HTTP/1.0") {
-			throw "505 REQUEST ERROR! Wrong protocol in reqest";
+		if (msg[2] != HTTP_VERSION_1_1 && msg[2] != HTTP_VERSION_1_0) {
+			throw REQ_ERROR_505 + std::string("Wrong protocol in reqest");
 		}
 	}
 
 	void User::parseRequestHeader(const std::string& header_string) {
-		std::string delimeter= ": ";
+		std::string delimeter= HEADER_KEY_VALUE_DELIMETR;
 		int find_delim = header_string.find(delimeter, 0);
 		if (find_delim == std::string::npos) {
-			throw "400 REQUEST ERROR! Header mistake, no delimeter ':'";
+			throw REQ_ERROR_400 + std::string("Header mistake, no delimeter ':'");
 		}
 		int value_start = find_delim + delimeter.length();
 		std::string key = header_string.substr(0, find_delim);
 		if (key.size() > HEADER_KEY_LENGTH) {
-			throw "400 REQUEST ERROR! Header key too big";
+			throw REQ_ERROR_400 + std::string("Header key too big");
 		}
 		std::string value = header_string.substr(value_start, header_string.size() - value_start);
 		if (value.size() > HEADER_VALUE_LENGTH) {
-			throw "400 REQUEST ERROR! Header value too big";
+			throw REQ_ERROR_400 + std::string("Header value too big");
 		}
 		request_header_.insert(std::pair<std::string, std::string>(key, value));
 		if (request_header_.size() > HEADER_FIELD_SIZE) {
-			throw "400 REQUEST ERROR! Header fields too much";
+			throw REQ_ERROR_400 + std::string("Header fields too much");
 		}
 	}
 
 	void User::recvBodyParseChunked() {
-		std::string new_row = "\r\n";
+		std::string new_row = END_OF_LINE_CHUNKED;
 		int len_new_row = new_row.length();
-		int pars_position = request_.find("\r\n\r\n") + 4;
-		int header_len = request_.find("\r\n0\r\n\r\n");
+		int pars_position = request_.find(END_HEADER_HTPP) + 4;
+		int header_len = request_.find(END_USEFUL_BLOOCK_IN_CHUNKED_METHOD);
 
 		while (pars_position < header_len) {
 			int find_pos = request_.find(new_row, pars_position);
@@ -223,9 +224,9 @@ namespace webserver {
 	}
 
 	void User::recvBodyParseLength() {
-		int body_start = request_.find("\r\n\r\n", 0) + 4;
+		int body_start = request_.find(END_HEADER_HTPP, 0) + 4;
 		if (request_.size() > body_start + content_length_ + 2)
-			throw "400 REQUEST ERROR! RECV size > then MUST BE";
+			throw REQ_ERROR_400 + std::string("RECV size > then MUST BE");
 		request_body_ = request_.substr(body_start, content_length_);
 	}
 
@@ -488,7 +489,7 @@ namespace webserver {
 		if (it_content != request_header_.end()
 			&& it_content->second.find("multipart/form-data") != std::string::npos) {
 			if (it_content->second.find("boundary") == std::string::npos) {
-				throw "400 REQUEST ERROR! multipart/form-data have no boundery";
+				throw REQ_ERROR_400 + std::string("multipart/form-data have no boundery");
 			}
 			std::string name_boundary = "boundary=";
 			int name_boundary_len = name_boundary.length();
@@ -502,7 +503,7 @@ namespace webserver {
 		std::string file_name;
 		std::string path_file;
 		if (request_body_.find("filename=", 0) == std::string::npos) {
-			throw "400 REQUEST ERROR! no File name in request";
+			throw REQ_ERROR_400 + std::string("no File name in request");
 		} else {
 			std::string tmp_name = "filename=\"";
 			int tmp_name_len = tmp_name.length();
@@ -512,7 +513,7 @@ namespace webserver {
 			path_file = upload_dir + "/" + file_name;
 	 	}
 
-		request_body_ = request_body_.substr(request_body_.find("\r\n\r\n") + 4);
+		request_body_ = request_body_.substr(request_body_.find(END_HEADER_HTPP) + 4);
 		request_body_ = request_body_.substr(0, request_body_.find(boundary));
 
 		std::ofstream tmp_file(path_file);
@@ -629,8 +630,8 @@ namespace webserver {
 		response_header_ += "Version: " + request_protocol_ + "\r\n";
 		response_header_ += "Connection: keep-alive\r\n";
 		response_header_ += "Keep-Alive: timeout=10\r\n";
-		response_header_ += "Content-Length: " + std::to_string(response_body_.length());
-		response_header_ += "\r\n\r\n";
+		response_header_ += HEADER_CONTENT_LENGHT_MEHOD + std::to_string(response_body_.length());
+		response_header_ += END_HEADER_HTPP;
 		response_ = response_header_ + response_body_;	
 	}
 
@@ -638,7 +639,7 @@ namespace webserver {
 		std::string new_row = "\r\n";
 		int len_new_row = new_row.length();
 		int pars_position = 0;
-		int header_len = request_.find("\r\n\r\n");
+		int header_len = request_.find(END_HEADER_HTPP);
 
 		while (pars_position < header_len) {
 			int find_pos = request_.find(new_row, pars_position);
@@ -673,8 +674,8 @@ namespace webserver {
 		response_header_ += "Content-Type: text/html; charset=utf-8\r\n";
 		response_header_ += "Connection: keep-alive\r\n";
 		response_header_ += "Keep-Alive: timeout=5\r\n";
-		response_header_ += "Content-Length: " + std::to_string(response_body_.length());
-		response_header_ += "\r\n\r\n";
+		response_header_ += HEADER_CONTENT_LENGHT_MEHOD + std::to_string(response_body_.length());
+		response_header_ += END_HEADER_HTPP;
 		response_ =  response_header_ + response_body_;
 	}
 
