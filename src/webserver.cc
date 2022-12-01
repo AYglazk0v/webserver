@@ -2,6 +2,6 @@
 
 int	main(int argc, char** argv) {
 	webserver::Server srv(argc, argv);
-	srv.Loop(); //TODO
+	srv.Loop(); 
 	return (0);
 }
