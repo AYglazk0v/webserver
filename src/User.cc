@@ -670,7 +670,7 @@ namespace webserver {
 		createResponseErrorBody(msg_error);
 
 		response_header_ += request_protocol_ + " " + num_error + " " + http_code_list_->find(num_error)->second + END_OF_LINE_CHUNKED;
-		response_header_ += "Version: " + request_protocol_ + END_BLOCK_IN_CHUNKED_METHOD;
+		response_header_ += "Version: " + request_protocol_ + END_OF_LINE_CHUNKED;
 		response_header_ += "Content-Type: text/html; charset=utf-8\r\n";
 		response_header_ += "Connection: keep-alive\r\n";
 		response_header_ += "Keep-Alive: timeout=5\r\n";

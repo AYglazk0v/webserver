@@ -509,7 +509,9 @@ namespace webserver {
 		std::string	conf_path = findConfigPath(argc, argv);
 		brace_ = 0;
 		readConfigFile(conf_path);
+		#if DEBUG
 		nginxPrint();
+		#endif
 	}
 
 } //namespace webserver

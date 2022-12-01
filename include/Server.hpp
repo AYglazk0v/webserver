@@ -9,8 +9,13 @@
 # include <time.h>
 # include <fcntl.h>
 
+# ifndef DEBUG
+#  define DEBUG				0
+# else
+#  define DEBUG				1
+# endif
 
-# define DEBUG				1
+
 # define MIME_PATH			"./config/mime.conf"
 # define MAX_BUFFER_RECV	65535	// max possible read
 # define MAX_LISTEN			1024	// number of listen

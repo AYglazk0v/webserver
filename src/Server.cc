@@ -159,41 +159,54 @@ namespace webserver {
 		int poll_count = 0;
 		int n = 0;
 		while (poll_count == 0) {
+			#if DEBUG
 			std::cout << SERVER_POOL_WAIT << dot[n++] << std::flush;
+			#endif
 			poll_count = poll(&(fds_.front()), fds_.size(), TIMEOUT);
 			if (n == 10) {
 				checkUserTimeOut();
 				n = 0;
 			}
 			if (poll_count < 0) {
+				#if DEBUG
 				std::cout << SERVER_POOL_WAIT_MINUS_ONE << std::endl;
+				#endif
 				poll_count = 0;
 			}
 		}
+		#if DEBUG
 		std::cout << "\r" << currentDataTime() << "\t" << SERVER_POOL_WAIT_CONNECTION << std::endl;
+		#endif
 	}
 
 	void Server::pollInServer(std::vector<pollfd>::iterator& it) {
-		if (DEBUG == 1) {
+		#if DEFINE
 			std::cout << SERVER_POOLIN_RECIEVED_SERV << it->fd << std::endl;
-		}
+		#endif
+
 		it->revents = 0;
 		sockaddr_in addr;
 		socklen_t addr_len = sizeof(addr);
 		int user_fd = accept(it->fd, reinterpret_cast<struct sockaddr*>(&addr), &addr_len);
 		if (user_fd < 0) {
+			#if DEBUG
 			std::cout << ERROR_SERVER_POOLIN_NEW_CONN << std::endl;
+			#endif
 		} else {
 			char buff[16];
 			inet_ntop(AF_INET, &addr.sin_addr, buff, sizeof(buff));
+			#if DEBUG
 			std::cout << SERVER_POOLIN_NEW_CONN << user_fd << " from : " << buff << std::endl;
+			#endif
 			User new_usr(user_fd, &serv_[it->fd], addr, &http_code_list_, &mime_ext_list_);
 			struct  pollfd tmp;
 			tmp.fd = user_fd;
 			tmp.events = POLLIN;
 			tmp.revents = 0;
 			if (fcntl(user_fd, F_SETFL, O_NONBLOCK) < 0) {
+				#if DEBUG
 				std::cout << ERROR_SERVER_POOLIN_FCNTL << std::endl;
+				#endif
 				close(user_fd);
 				return;
 			}
@@ -203,9 +216,10 @@ namespace webserver {
 	}
 
 	void Server::pollInUser(std::vector<pollfd>::iterator& it) {
-		if (DEBUG == 1) {
+		# if DEBUG
 			std::cout << SERVER_POOLIN_RECIEVED_USER << it->fd << std::endl;
-		}
+		# endif
+
 		it->revents = 0;
 		User *itu = &usr_.find(it->fd)->second;
 		itu->UpdateActiveTime();
@@ -216,13 +230,17 @@ namespace webserver {
 			std::cout<< ERROR_SERVER_POOLIN_USER_READ << it->fd << std::endl;
 			user_close_.insert(it->fd);
 		} else if (nbytes == 0) {
+			#if DEBUG 
 			std::cout << SERVER_POOLIN_USER_SESS_END << it->fd << std::endl;
+			#endif
 			user_close_.insert(it->fd);
 		} else {
 			if (itu->recvRequest(buffer, nbytes) == false) {
 				return;
 			}
+			#if DEBUG 
 			std::cout << SERVER_POOLIN_USER_READ_END << it->fd << std::endl;
+			#endif
 			try {
 				itu->checkAndParseRequest();
 				itu->createResponse();
@@ -234,16 +252,21 @@ namespace webserver {
 				std::cerr << e.what() << std::endl;
 				itu->createResponseError("500 Unexpected Error...");
 			}
-			itu->requestPrint();
-			itu->responsePrint();
+			
+			# if DEBUG
+				itu->requestPrint();
+				itu->responsePrint();
+			# endif
+
 			it->events = POLLOUT;
 		}
 	}
 
 	void Server::pollOut(std::vector<pollfd>::iterator& it) {
-		if (DEBUG == 1) {
+		#if DEBUG
 			std::cout << SERVER_POOLOUT_RECIEVED << it->fd << std::endl;
-		}
+		#endif
+
 		it->revents = 0;
 		User *itu = &usr_.find(it->fd)->second;
 		itu->UpdateActiveTime();
@@ -266,27 +289,40 @@ namespace webserver {
 		if (itu->getResponse().length() - itu->getResponseSendPos() > 0) {
 			return ;
 		}
+		#if DEBUG
 		std::cout << SERVER_POOLOUT_USER_SEND_END << it->fd << ". ";
+		#endif
 		if (itu->getResponseHeader().find("Connection: close") != std::string::npos) {
+			#if DEBUG
 			std::cout << SERVER_POOLOUT_CLOSE << std::endl;
+			#endif
 			user_close_.insert(it->fd);
 		} else {
+			#if DEBUG
 			std::cout << SERVER_POOLOUT_NOT_CLOSE << std::endl;
+			#endif
 			itu->clearAll();
 			it->events = POLLIN;
 		}
 	}
 
 	void Server::pollElse(std::vector<pollfd>::iterator& it) {
-		if (DEBUG == 1) {
+		#if DEBUG
 			std::cout << SERVER_POOLERR_RECIEVED << it->fd << " : ";
-		}
+		#endif
+
 		if (it->revents & POLLNVAL) {
+			#if DEBUG
 			std::cout << SERVER_POLLNVAL << std::endl;
+			#endif
 		} else if (it->revents & POLLHUP) {
+			#if DEBUG
 			std::cout << SERVER_POLLHUP << std::endl;
+			#endif
 		} else if (it->revents & POLLERR) {
+			#if DEBUG
 			std::cout << SERVER_POLLERR << std::endl;
+			#endif
 		}
 		user_close_.insert(it->fd);
 	}
@@ -322,7 +358,9 @@ namespace webserver {
 							close(it_fd->fd);
 							fds_.erase(it_fd);
 							usr_.erase(itt);
+							#if DEBUG
 							std::cout << "\t\ttimeout: user disconected " << del_fd << std::endl;
+							#endif
 						} else {
 							it_fd->events = POLLOUT;
 							itt->second.createResponseError("504 ... send to close TIMEOUT");
@@ -337,9 +375,9 @@ namespace webserver {
 
 	void Server::Loop() {
 		while (true) {
-			if (DEBUG == 1) {
+			#if DEBUG
 				std::cout << "Numbeer of listenning fd : " << fds_.size() << std::endl;
-			}
+			#endif
 			pollWait();
 			for (std::vector<pollfd>::iterator it = fds_.begin(), ite = fds_.end(); it != ite; ++it) {
 				if (it->revents == 0) {
