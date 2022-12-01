@@ -1,5 +1,6 @@
 #include "../include/User.hpp"
-
+#include <unistd.h>
+extern char **environ;
 
 namespace webserver {
 
@@ -121,7 +122,7 @@ namespace webserver {
 			is_content_length_ = true;
 			std::string len_type = HEADER_CONTENT_LENGHT_MEHOD;
 			size_t len_start = request_.find(len_type) + len_type.length();
-			size_t len_end = request_.find("\r\n", len_start);
+			size_t len_end = request_.find(END_OF_LINE_CHUNKED, len_start);
 			content_length_ = std::atoi(request_.substr(len_start, len_end - len_start).c_str());
 		}
 	}
@@ -160,7 +161,7 @@ namespace webserver {
 		std::vector<std::string> msg = split(method_string, " ");
 		if (msg.size() != 3) {
 			request_protocol_ = HTTP_VERSION_1_1;
-			throw REQ_ERROR_400 + std::string("Wrong first line in reqest");
+			throw REQ_ERROR_400 "Wrong first line in reqest";
 		}
 		request_method_ = msg[0];
 		int find_path_delim = msg[1].find("?");
@@ -174,13 +175,13 @@ namespace webserver {
 		request_protocol_ = msg[2];
 		if (msg[0] != METHOD_GET && msg[0] != METHOD_POST
 				&& msg[0] != METHOD_PUT && msg[0] != METHOD_DELETE) {
-			throw REQ_ERROR_405 + std::string("Wrong method in reqest");
+			throw REQ_ERROR_405 "Wrong method in reqest";
 		}
 		if (msg[1].length() > 2048) {
-			throw REQ_ERROR_414 +std::string("Wrong URI length");
+			throw REQ_ERROR_414 "Wrong URI length";
 		}
 		if (msg[2] != HTTP_VERSION_1_1 && msg[2] != HTTP_VERSION_1_0) {
-			throw REQ_ERROR_505 + std::string("Wrong protocol in reqest");
+			throw REQ_ERROR_505 "Wrong protocol in reqest";
 		}
 	}
 
@@ -188,20 +189,20 @@ namespace webserver {
 		std::string delimeter= HEADER_KEY_VALUE_DELIMETR;
 		int find_delim = header_string.find(delimeter, 0);
 		if (find_delim == std::string::npos) {
-			throw REQ_ERROR_400 + std::string("Header mistake, no delimeter ':'");
+			throw REQ_ERROR_400 "Header mistake, no delimeter ':'";
 		}
 		int value_start = find_delim + delimeter.length();
 		std::string key = header_string.substr(0, find_delim);
 		if (key.size() > HEADER_KEY_LENGTH) {
-			throw REQ_ERROR_400 + std::string("Header key too big");
+			throw REQ_ERROR_400 "Header key too big";
 		}
 		std::string value = header_string.substr(value_start, header_string.size() - value_start);
 		if (value.size() > HEADER_VALUE_LENGTH) {
-			throw REQ_ERROR_400 + std::string("Header value too big");
+			throw REQ_ERROR_400 "Header value too big";
 		}
 		request_header_.insert(std::pair<std::string, std::string>(key, value));
 		if (request_header_.size() > HEADER_FIELD_SIZE) {
-			throw REQ_ERROR_400 + std::string("Header fields too much");
+			throw REQ_ERROR_400 "Header fields too much";
 		}
 	}
 
@@ -226,7 +227,7 @@ namespace webserver {
 	void User::recvBodyParseLength() {
 		int body_start = request_.find(END_HEADER_HTPP, 0) + 4;
 		if (request_.size() > body_start + content_length_ + 2)
-			throw REQ_ERROR_400 + std::string("RECV size > then MUST BE");
+			throw REQ_ERROR_400 "RECV size > then MUST BE";
 		request_body_ = request_.substr(body_start, content_length_);
 	}
 
@@ -246,7 +247,7 @@ namespace webserver {
 						tmp_path = request_uri_;
 						n++;
 						if (n == 5) {
-							throw ERROR_508 + std::string("loop return in config");
+							throw ERROR_508 "loop return in config";
 						}
 						continue ;
 					}
@@ -254,7 +255,7 @@ namespace webserver {
 				break;
 			}
 			if (tmp_path == "/") {
-				throw ERROR_404 + std::string("path not found parseRequestFindLocation");
+				throw ERROR_404 "path not found parseRequestFindLocation";
 			}
 			tmp_path = tmp_path.substr(0, tmp_path.rfind('/'));
 			if (tmp_path.empty()) {
@@ -277,7 +278,7 @@ namespace webserver {
 	}
 
 	void User::createResponseReturnHeader() {
-		status_code_ = "301";
+		status_code_ = STATUS_301_MOVED_PERMANENTLY;
 		response_header_ += request_protocol_ + " " + status_code_ + " " + http_code_list_->find(status_code_)->second + END_OF_LINE_CHUNKED;
 		response_header_ += HEADER_LOCATION + response_location_->getReturn() + END_OF_LINE_CHUNKED;
 	}
@@ -322,7 +323,7 @@ namespace webserver {
 			if (!cgi_body_split.empty() && cgi_body_split[0] == HEADER_STATUS) {
 				if (cgi_body_split[1] != STATUS_200_OK) {
 					if (http_code_list_->find(cgi_body_split[1]) == http_code_list_->end()) {
-						throw ERROR_500 + std::string("No error code find in CGI");
+						throw ERROR_500 "No error code find in CGI";
 					}
 					std::string error = cgi_body_split[1] + " Error from CGI";
 					throw error.c_str();
@@ -352,10 +353,9 @@ namespace webserver {
 
 		pid_t pid = fork();
 		if (pid == -1) {
-			throw ERROR_502 + std::string("Could not create process in CgiHandler");
+			throw ERROR_502 "Could not create process in CgiHandler";
 		}
 		if (pid == 0) {
-			extern char **environ;
 			CGIsetEnv();
 
 			char const	*cgi_info[3];
@@ -371,10 +371,10 @@ namespace webserver {
 		}
 		int status;
 		if (waitpid(pid, &status, 0) == -1) {
-			throw ERROR_500 + std::string("waitpid error");
+			throw ERROR_500 "waitpid error";
 		}
 		if (WIFEXITED(status) && WEXITSTATUS(status)) {
-			throw ERROR_502 + std::string ("cgi status error");
+			throw ERROR_502 "cgi status error";
 		}
 		lseek(fdOutput, 0, SEEK_SET);
 		int size_buf = 65535;
@@ -382,7 +382,7 @@ namespace webserver {
 		int ret;
 		while ((ret = read(fdOutput, buffer, size_buf - 1)) != 0) {
 			if (ret == -1) {
-				throw ERROR_500 + std::string("Error read from tmpfile in CGI");
+				throw ERROR_500 "Error read from tmpfile in CGI";
 			}
 			response_body_.append(buffer, ret);
 		}
@@ -406,7 +406,7 @@ namespace webserver {
 			std::string buffer;
 			std::ifstream open_file(body_path_to_file);
 			if (!open_file.is_open()) {
-				throw ERROR_500 + std::string(" File Body Cannot Open");	
+				throw ERROR_500 " File Body Cannot Open";
 			}
 			while(std::getline(open_file, buffer)) {
 				response_body_ += buffer + "\n";
@@ -468,20 +468,20 @@ namespace webserver {
 			response_ext_ = response_path_.substr(response_path_.rfind('.'));
 		}
 		if (response_location_->getAllowMethod().find(request_method_) == response_location_->getAllowMethod().end()) {
-			throw RESP_ERROR_405 + std::string("Not Allow parseResponseGetBody");
+			throw RESP_ERROR_405 "Not Allow parseResponseGetBody";
 		} else if (response_dir_ == true && response_location_->getAutoindex() == "on") {
 			createResponseBodyDirectory(response_path_);
 		} else if (response_file_ == true) {
 			createResponseBodyFromFile(response_path_);
 		} else {
-			throw ERROR_404 + std::string("path not found parseResponseGetBody");
+			throw ERROR_404 "path not found parseResponseGetBody";
 		}
 	}
 
 	void User::parseResponseUpload() {
 		std::string upload_dir = server_->getRoot() + response_location_->getUploadPath();
 		if (!isDirectory(upload_dir)) {
-			throw ERROR_500 + std::string("no dir for upload in POST");
+			throw ERROR_500 "no dir for upload in POST";
 		}
 		std::string boundary;
 		std::string boundary_end;
@@ -489,7 +489,7 @@ namespace webserver {
 		if (it_content != request_header_.end()
 			&& it_content->second.find("multipart/form-data") != std::string::npos) {
 			if (it_content->second.find("boundary") == std::string::npos) {
-				throw REQ_ERROR_400 + std::string("multipart/form-data have no boundery");
+				throw REQ_ERROR_400 "multipart/form-data have no boundery";
 			}
 			std::string name_boundary = "boundary=";
 			int name_boundary_len = name_boundary.length();
@@ -498,12 +498,12 @@ namespace webserver {
 			boundary = "--" + it_content->second.substr(position_bounery_start, position_bounery_end - position_bounery_start);
 			boundary_end = boundary + "--";
 		} else {
-			throw ERROR_500 + std::string("wrong form for upload");
+			throw ERROR_500 "wrong form for upload";
 		}
 		std::string file_name;
 		std::string path_file;
 		if (request_body_.find("filename=", 0) == std::string::npos) {
-			throw REQ_ERROR_400 + std::string("no File name in request");
+			throw REQ_ERROR_400 "no File name in request";
 		} else {
 			std::string tmp_name = "filename=\"";
 			int tmp_name_len = tmp_name.length();
@@ -588,9 +588,9 @@ namespace webserver {
 		}
 		std::string path_file = upload_dir + file_name;
 		if (isFile(path_file)) {
-			status_code_ = "204";
+			status_code_ = STATUS_204_NO_CONTENT;
 		} else {
-			status_code_ = "201";
+			status_code_ = STATUS_201_CREATED;
 		}
 		std::ofstream tmp_file(path_file);
 		if (!tmp_file.is_open())
@@ -604,30 +604,30 @@ namespace webserver {
 			createResponseReturnHeader();
 		} else {
 			checkResponsePathUri();
-			if (request_method_ == "GET") {
+			if (request_method_ == METHOD_GET) {
 				parseResponseGetBody();
-			} else if (request_method_ == "POST") {
+			} else if (request_method_ == METHOD_POST) {
 				parseResponsePostBody();
-			} else if (request_method_ == "DELETE") {
+			} else if (request_method_ == METHOD_DELETE) {
 				parseResponseDeleteBody();
-			} else if (request_method_ == "PUT") {
+			} else if (request_method_ == METHOD_DELETE) {
 				parseResponsePutBody();
 			} else {
-				throw "405 Not Allow11111";
+				throw RESP_ERROR_405 "Not Allow";
 			}
-			response_header_ += request_protocol_ + " " + status_code_ + " " + http_code_list_->find(status_code_)->second + "\r\n";
+			response_header_ += request_protocol_ + " " + status_code_ + " " + http_code_list_->find(status_code_)->second + END_OF_LINE_CHUNKED;
 		}
 		if (content_type_cgi_ != "") {
-			response_header_ += content_type_cgi_ + "\r\n";
+			response_header_ += content_type_cgi_ + END_OF_LINE_CHUNKED;
 		} else if (mime_ext_list_->find(response_ext_) != mime_ext_list_->end()) {
-			response_header_ += "Content-Type: " + mime_ext_list_->find(response_ext_)->second + "\r\n";
+			response_header_ += "Content-Type: " + mime_ext_list_->find(response_ext_)->second + END_OF_LINE_CHUNKED;
 		} else {
 			response_header_ += "Content-Type: text/html; charset=utf-8\r\n";
 		}
 		if (!response_header_cookie_.empty()) {
-			response_header_ += response_header_cookie_ + "\r\n";
+			response_header_ += response_header_cookie_ + END_OF_LINE_CHUNKED;
 		}
-		response_header_ += "Version: " + request_protocol_ + "\r\n";
+		response_header_ += "Version: " + request_protocol_ + END_OF_LINE_CHUNKED;
 		response_header_ += "Connection: keep-alive\r\n";
 		response_header_ += "Keep-Alive: timeout=10\r\n";
 		response_header_ += HEADER_CONTENT_LENGHT_MEHOD + std::to_string(response_body_.length());
@@ -636,7 +636,7 @@ namespace webserver {
 	}
 
 	void User::checkAndParseRequest() {
-		std::string new_row = "\r\n";
+		std::string new_row = END_OF_LINE_CHUNKED;
 		int len_new_row = new_row.length();
 		int pars_position = 0;
 		int header_len = request_.find(END_HEADER_HTPP);
@@ -660,7 +660,7 @@ namespace webserver {
 		parseRequestFindLocation();
 		if (response_location_->getClientMaxBodySize() != 0
 				&& response_location_->getClientMaxBodySize() < request_body_.size()) {
-			throw "413 REQUEST ERROR! Size BODY too big";
+			throw  ERROR_413 "Size BODY too big";
 		}
 	}
 
@@ -669,8 +669,8 @@ namespace webserver {
 		std::string num_error = msg_error.substr(0, msg_error.find(" "));		
 		createResponseErrorBody(msg_error);
 
-		response_header_ += request_protocol_ + " " + num_error + " " + http_code_list_->find(num_error)->second + "\r\n";
-		response_header_ += "Version: " + request_protocol_ + "\r\n";
+		response_header_ += request_protocol_ + " " + num_error + " " + http_code_list_->find(num_error)->second + END_OF_LINE_CHUNKED;
+		response_header_ += "Version: " + request_protocol_ + END_BLOCK_IN_CHUNKED_METHOD;
 		response_header_ += "Content-Type: text/html; charset=utf-8\r\n";
 		response_header_ += "Connection: keep-alive\r\n";
 		response_header_ += "Keep-Alive: timeout=5\r\n";

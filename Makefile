@@ -12,10 +12,12 @@ HEADER		=	Location.hpp \
 				Server_info.hpp \
 				User.hpp \
 				Location.hpp \
+				User.hpp \
 				utils.hpp
 
 SRC			=	webserver.cc \
 				Nginx.cc \
+				User.cc \
 				Server.cc \
 				utils.cc
 

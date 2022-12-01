@@ -1,4 +1,5 @@
 #include "../include/Server.hpp"
+#include "../include/utils.hpp"
 
 namespace {
 	void signal_handler(int signal) {
@@ -81,7 +82,8 @@ namespace webserver {
 		if (listen_fd < 0) {
 			throw std::runtime_error(ERROR_SERVER_SOCKET);
 		}
-		if ((setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int))) < 0) {
+		int ok = 1;
+		if ((setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &ok, sizeof(int))) < 0) {
 			close(listen_fd);
 			throw std::runtime_error(ERROR_SERVER_SETSOCKOPT);
 		}
@@ -90,7 +92,7 @@ namespace webserver {
 			throw std::runtime_error(ERROR_SERVER_FCNTL);
 		}
 		struct	sockaddr_in serv_addr;
-		std::fill(&serv_addr,&serv_addr + sizeof(serv_addr),0);
+		std::memset(&serv_addr, 0, sizeof(serv_addr));
 		serv_addr.sin_family = AF_INET;
 		serv_addr.sin_addr.s_addr = inet_addr(host.c_str());
 		serv_addr.sin_port = htons(port);

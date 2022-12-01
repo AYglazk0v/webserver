@@ -3,6 +3,7 @@
 
 # include <vector>
 # include <string>
+# include <cstring>
 # include <fstream>
 # include <unistd.h>
 # include <algorithm>
