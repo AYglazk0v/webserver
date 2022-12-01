@@ -1,6 +1,5 @@
 NAME		=	webserv
 
-
 DEBUG ?= 1
 ifeq ($(DEBUG), 1)
 	CC			=	c++ -std=c++98 -DNDEBUG
@@ -54,8 +53,6 @@ $(OBJ_DIR)/%.o	:	$(SRC_DIR)/%.cc ${HEADER_DIR}/*.hpp Makefile
 $(NAME)		:	$(OBJ)
 				$(CC) $(CFLAGS) $(OBJ) -o $(NAME)
 				@echo "\tCompiling...\t" [ $(NAME) ] $(SUCCESS)
-
-debug		:
 
 clean		:
 				@$(RM_DIR) $(OBJ_DIR)
