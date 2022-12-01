@@ -66,7 +66,7 @@ namespace webserver
 		bool								recv_body_;
 		bool								is_chunked_;
 		bool								is_content_length_;
-		bool								content_length_;
+		int									content_length_;
 		
 		const Location*						response_location_;
 		std::string							response_;
