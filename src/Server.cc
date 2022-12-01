@@ -296,7 +296,7 @@ namespace webserver {
 		for (std::set<int>::iterator it = user_close_.begin(), 
 				ite = user_close_.end(); it != ite; it++) {
 			for (std::vector<pollfd>::iterator itt = fds_.begin(),
-					itte = fds_.end(); itt != itte; it++) {
+					itte = fds_.end(); itt != itte; itt++) {
 				if (*it == itt->fd) {
 					close(itt->fd); 
 					usr_.erase(itt->fd);
@@ -308,7 +308,7 @@ namespace webserver {
 		user_close_.clear();
 	}
 
-	void Server::checkUserTimeOut() { //МБ ЕСТЬ ОШИБКА ЧЕНКУТЬ!!!
+	void Server::checkUserTimeOut() {
 		if (time(0) - check_session_ < TIMEOUT_USER / 2) {
 			return ;
 		}
