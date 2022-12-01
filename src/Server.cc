@@ -68,8 +68,8 @@ namespace webserver {
 			clearBuffer(buffer);
 			if(!buffer.empty()) {
 				std::vector<std::string> tmp_mime = split(buffer, " ");
-				for (size_t i = 1, end =tmp_mime.size(); i < end; ++i) {
-					mime_ext_list_.insert(std::pair<std::string, std::string>("." + tmp_mime[1], tmp_mime[0]));
+				for (size_t i = 1, end = tmp_mime.size(); i < end; i++) {
+					mime_ext_list_.insert(std::pair<std::string, std::string>("." + tmp_mime[i], tmp_mime[0]));
 				}
 			}
 		}
