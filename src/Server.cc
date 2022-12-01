@@ -227,7 +227,9 @@ namespace webserver {
 		char buffer[MAX_BUFFER_RECV];
 		int nbytes = recv(it->fd, buffer, MAX_BUFFER_RECV - 1 , 0);
 		if (nbytes < 0) {
+			#if DEBUG 
 			std::cout<< ERROR_SERVER_POOLIN_USER_READ << it->fd << std::endl;
+			#endif
 			user_close_.insert(it->fd);
 		} else if (nbytes == 0) {
 			#if DEBUG 
@@ -246,7 +248,9 @@ namespace webserver {
 				itu->createResponse();
 
 			} catch (const char* s) {
+				#if DEBUG 
 				std::cout<< s << " " << it->fd << std::endl;
+				#endif
 				itu->createResponseError(s);
 			} catch (const std::exception& e) {
 				std::cerr << e.what() << std::endl;
@@ -281,7 +285,9 @@ namespace webserver {
 				break ;
 			}
 			if (n < RETRY_TO_SEND) {
+				#if DEBUG
 				std::cout<< ERROR_SERVER_POOLIN_USER_SEND << it->fd << std::endl;
+				#endif
 				user_close_.insert(it->fd);
 				return ;
 			}

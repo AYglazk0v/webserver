@@ -1,12 +1,13 @@
 NAME		=	webserv
 
-CC			=	c++ -std=c++98 -g
 
 DEBUG ?= 1
 ifeq ($(DEBUG), 1)
-	CFLAGS		=	-Wall -Werror -Wextra -DDEBUG
+	CC			=	c++ -std=c++98 -DNDEBUG
+	CFLAGS		=	-Wall -Werror -Wextra
 else
-	CFLAGS		=	-Wall -Werror -Wextra -DNDEBUG
+	CC			=	c++ -std=c++98 -g -DDEBUG
+	CFLAGS		=	-Wall -Werror -Wextra
 endif
 
 HEADER_DIR	=	./include
