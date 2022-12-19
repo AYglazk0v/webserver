@@ -1,6 +1,6 @@
 
 <h1 align="center">
-🌐ft_container
+🌐WebServer
 </h1>
 
 ## 💡 О проекте:
